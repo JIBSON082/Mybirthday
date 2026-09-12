@@ -13,12 +13,23 @@ export default function Nav() {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-[100] grid grid-cols-3 items-center px-[5vw] py-6">
+      <nav className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-[5vw] py-6">
+        <div
+          className="font-display text-[2.4rem] leading-none tracking-wide text-black"
+          style={{
+            WebkitTextStroke: "1.5px black",
+            textShadow:
+              "1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000",
+          }}
+        >
+          DAVE
+        </div>
+
         <button
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? "Close menu" : "Open menu"}
           aria-expanded={open}
-          className="relative z-[110] flex h-9 w-9 flex-col items-center justify-center gap-[6px] justify-self-start"
+          className="relative z-[110] flex h-9 w-9 flex-col items-center justify-center gap-[6px]"
         >
           <span
             className="block h-[2px] w-6 bg-black transition-all duration-300 ease-[cubic-bezier(0.65,0,0.35,1)]"
@@ -41,22 +52,11 @@ export default function Nav() {
             }
           />
         </button>
-
-        <div
-          className="justify-self-center font-display text-[2.4rem] leading-none tracking-wide text-black"
-          style={{
-            WebkitTextStroke: "1.5px black",
-            textShadow:
-              "1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000",
-          }}
-        >
-          DAVE
-        </div>
       </nav>
 
       {/* menu overlay */}
       <div
-        className="fixed inset-0 z-[95] bg-bg/98 backdrop-blur-sm transition-opacity duration-500"
+        className="fixed inset-0 z-[95] bg-bg transition-opacity duration-500"
         style={{
           opacity: open ? 1 : 0,
           pointerEvents: open ? "auto" : "none",
