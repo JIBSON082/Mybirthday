@@ -1,60 +1,72 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import gsap from "gsap";
-import { HERO_PHOTO_URL } from "@/lib/photos";
+
+const HERO_BG =
+  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto,e_blur:200/v1789228439/IMG_8064_iyqyn2";
 
 export default function Hero() {
   const bgRef = useRef<HTMLDivElement>(null);
-  const titleRef = useRef<HTMLHeadingElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const tl = gsap.timeline();
-    tl.fromTo(
-      titleRef.current,
-      { opacity: 0, y: 60 },
-      { opacity: 1, y: 0, duration: 1.4, ease: "power3.out" }
-    );
+    const heroHeight = window.innerHeight;
 
-    const handleScroll = () => {
-      const scrolled = window.scrollY;
-      gsap.to(bgRef.current, {
-        y: scrolled * 0.3,
-        scale: 1 + scrolled * 0.0003,
-        overwrite: "auto",
-        duration: 0.3,
-      });
-      gsap.to(titleRef.current, {
-        y: scrolled * 0.5,
-        opacity: 1 - scrolled / 500,
-        overwrite: "auto",
-        duration: 0.3,
-      });
-    };
+    function onScroll() {
+      const y = window.scrollY;
+      const p = Math.min(y / heroHeight, 1);
+      if (bgRef.current) {
+        bgRef.current.style.transform = `translateY(${y * 0.35}px)`;
+      }
+      if (contentRef.current) {
+        contentRef.current.style.transform = `translateY(${-y * 0.25}px)`;
+        contentRef.current.style.opacity = String(1 - p * 1.15);
+      }
+    }
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
-    <section className="relative h-screen w-full overflow-hidden flex items-center justify-center">
+    <section className="relative h-screen w-full flex flex-col items-center justify-center overflow-hidden">
       <div
         ref={bgRef}
-        className="absolute inset-0 bg-cover bg-center scale-110"
-        style={{ backgroundImage: `url(${HERO_PHOTO_URL})` }}
+        className="absolute -inset-x-[6vw] -inset-y-[6vh] bg-cover bg-center will-change-transform"
+        style={{ backgroundImage: `url(${HERO_BG})` }}
       />
-      <div className="absolute inset-0 hero-mask" />
-      <h1
-        ref={titleRef}
-        className="relative z-10 text-center font-display font-black uppercase leading-[0.85] text-[16vw] md:text-[11vw] tracking-tighter"
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(to bottom, rgba(10,10,10,0) 0%, rgba(10,10,10,0.55) 55%, rgba(10,10,10,0.97) 100%)",
+        }}
+      />
+      <div
+        ref={contentRef}
+        className="relative z-[2] text-center will-change-transform"
       >
-        DAVE
-        <span className="block text-[6vw] md:text-[3vw] tracking-[0.4em] font-light mt-4 glow-text">
-          The Gallery
+        <h1 className="font-display font-normal leading-[0.9] tracking-wide text-ink text-[clamp(4.5rem,15vw,11rem)]">
+          <span className="block">The</span>
+          <span
+            className="block text-gold"
+            style={{ textShadow: "0 0 20px rgba(212,175,55,0.4)" }}
+          >
+            Gallery
+          </span>
+        </h1>
+      </div>
+      <div className="absolute bottom-11 left-1/2 -translate-x-1/2 z-[2] flex flex-col items-center gap-2 opacity-75">
+        <span className="text-[0.62rem] tracking-[0.3em] uppercase">
+          Scroll
         </span>
-      </h1>
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 text-xs tracking-[0.3em] uppercase text-bone/50 animate-pulse">
-        Scroll
+        <div
+          className="scroll-cue-line w-px h-[34px]"
+          style={{
+            background: "linear-gradient(to bottom, #d4af37, transparent)",
+          }}
+        />
       </div>
     </section>
   );
