@@ -1,13 +1,67 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const HERO_BG =
   "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto,e_blur:200/v1789228439/IMG_8064_iyqyn2";
 
+const DATE_TEXT = "12TH SEPTEMBER";
+
+/**
+ * Loops a type-on / type-off effect: types the date forward,
+ * holds, deletes it back to nothing, holds, repeats forever.
+ */
+function useTypewriterLoop(fullText: string) {
+  const [display, setDisplay] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    let i = 0;
+    let deleting = false;
+
+    const TYPE_SPEED = 95;
+    const DELETE_SPEED = 55;
+    const HOLD_FULL = 1400;
+    const HOLD_EMPTY = 600;
+
+    function tick() {
+      if (cancelled) return;
+
+      if (!deleting) {
+        i += 1;
+        setDisplay(fullText.slice(0, i));
+        if (i >= fullText.length) {
+          deleting = true;
+          setTimeout(tick, HOLD_FULL);
+          return;
+        }
+        setTimeout(tick, TYPE_SPEED);
+      } else {
+        i -= 1;
+        setDisplay(fullText.slice(0, i));
+        if (i <= 0) {
+          deleting = false;
+          setTimeout(tick, HOLD_EMPTY);
+          return;
+        }
+        setTimeout(tick, DELETE_SPEED);
+      }
+    }
+
+    const start = setTimeout(tick, TYPE_SPEED);
+    return () => {
+      cancelled = true;
+      clearTimeout(start);
+    };
+  }, [fullText]);
+
+  return display;
+}
+
 export default function Hero() {
   const bgRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const dateText = useTypewriterLoop(DATE_TEXT);
 
   useEffect(() => {
     const heroHeight = window.innerHeight;
@@ -43,20 +97,42 @@ export default function Hero() {
             "linear-gradient(to bottom, rgba(10,10,10,0) 0%, rgba(10,10,10,0.55) 55%, rgba(10,10,10,0.97) 100%)",
         }}
       />
+
+      {/* looping typewriter date, set directly into the image */}
+      <div className="absolute top-[16%] left-1/2 -translate-x-1/2 z-[2] flex items-center justify-center px-6">
+        <span
+          className="font-body text-[0.72rem] sm:text-[0.85rem] tracking-[0.55em] uppercase text-gold whitespace-nowrap"
+          style={{ textShadow: "0 0 14px rgba(212,175,55,0.55)" }}
+        >
+          {dateText}
+        </span>
+        <span
+          className="ml-1 inline-block h-[1em] w-[2px] bg-gold animate-pulse"
+          style={{ boxShadow: "0 0 8px rgba(212,175,55,0.7)" }}
+          aria-hidden="true"
+        />
+      </div>
+
       <div
         ref={contentRef}
         className="relative z-[2] text-center will-change-transform"
       >
         <h1 className="font-display font-normal leading-[0.9] tracking-wide text-ink text-[clamp(4.5rem,15vw,11rem)]">
-          <span className="block">The</span>
+          <span className="block animate-hero-line" style={{ animationDelay: "0.1s" }}>
+            The
+          </span>
           <span
-            className="block text-gold"
-            style={{ textShadow: "0 0 20px rgba(212,175,55,0.4)" }}
+            className="block text-gold animate-hero-line"
+            style={{
+              textShadow: "0 0 20px rgba(212,175,55,0.4)",
+              animationDelay: "0.35s",
+            }}
           >
             Gallery
           </span>
         </h1>
       </div>
+
       <div className="absolute bottom-11 left-1/2 -translate-x-1/2 z-[2] flex flex-col items-center gap-2 opacity-75">
         <span className="text-[0.62rem] tracking-[0.3em] uppercase">
           Scroll
