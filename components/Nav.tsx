@@ -13,12 +13,12 @@ export default function Nav() {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-[100] flex items-center gap-4 px-[5vw] py-6">
+      <nav className="fixed top-0 left-0 right-0 z-[100] grid grid-cols-3 items-center px-[5vw] py-6">
         <button
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? "Close menu" : "Open menu"}
           aria-expanded={open}
-          className="relative z-[110] flex h-9 w-9 flex-col items-center justify-center gap-[6px]"
+          className="relative z-[110] flex h-9 w-9 flex-col items-center justify-center gap-[6px] justify-self-start"
         >
           <span
             className="block h-[2px] w-6 bg-black transition-all duration-300 ease-[cubic-bezier(0.65,0,0.35,1)]"
@@ -42,7 +42,14 @@ export default function Nav() {
           />
         </button>
 
-        <div className="font-graffiti text-[2.1rem] leading-none tracking-wide text-black">
+        <div
+          className="justify-self-center font-display text-[2.4rem] leading-none tracking-wide text-black"
+          style={{
+            WebkitTextStroke: "1.5px black",
+            textShadow:
+              "1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000",
+          }}
+        >
           DAVE
         </div>
       </nav>
