@@ -15,6 +15,7 @@ const config: Config = {
       fontFamily: {
         display: ["var(--font-anton)", "sans-serif"],
         body: ["var(--font-jost)", "sans-serif"],
+        editorial: ["var(--font-playfair)", "serif"],
       },
     },
   },
