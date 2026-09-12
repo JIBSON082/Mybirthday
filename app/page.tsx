@@ -1,16 +1,42 @@
-import Nav from "@/components/Nav";
-import Hero from "@/components/Hero";
-import Gallery from "@/components/Gallery";
+import type { Metadata } from "next";
+import { Anton, Jost, Playfair_Display } from "next/font/google";
+import "./globals.css";
 
-export default function Home() {
+const anton = Anton({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-anton",
+});
+
+const jost = Jost({
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
+  variable: "--font-jost",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["700", "900"],
+  style: ["normal", "italic"],
+  variable: "--font-playfair",
+});
+
+export const metadata: Metadata = {
+  title: "DAVE — The Gallery",
+  description: "David Ajibua — captured, kept, celebrated",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <main>
-      <Nav />
-      <Hero />
-      <Gallery />
-      <footer className="relative z-[2] bg-bg text-center px-[5vw] py-10 text-[0.7rem] tracking-[0.3em] uppercase text-ink/40">
-        David Ajibua &mdash; captured, kept, celebrated
-      </footer>
-    </main>
+    <html lang="en">
+      <body className={`${anton.variable} ${jost.variable} ${playfair.variable} font-body`}>
+        <div className="grain" />
+        {children}
+      </body>
+    </html>
   );
 }
