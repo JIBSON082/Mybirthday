@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 const HERO_BG =
-  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto,e_blur:200/v1789228439/IMG_8064_iyqyn2";
+  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto,e_blur:200/v1789255624/file_0000000029d482108ece7ddd7750b73a_az4bdv.png";
 
 const DATE_TEXT = "12TH SEPTEMBER";
 
