@@ -1,20 +1,33 @@
 import type { Metadata } from "next";
+import { Anton, Jost } from "next/font/google";
 import "./globals.css";
 
+const anton = Anton({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-anton",
+});
+
+const jost = Jost({
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
+  variable: "--font-jost",
+});
+
 export const metadata: Metadata = {
-  title: "DAVE — 25",
-  description: "A cinematic birthday gallery.",
+  title: "DAVE — The Gallery",
+  description: "David Ajibua — captured, kept, celebrated",
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html lang="en">
-      <body className="bg-ink text-bone antialiased">
-        <div className="grain-overlay animate-grain" />
+      <body className={`${anton.variable} ${jost.variable} font-body`}>
+        <div className="grain" />
         {children}
       </body>
     </html>
