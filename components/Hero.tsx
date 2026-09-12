@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 const HERO_BG =
-  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto,e_blur:200/v1789255624/file_0000000029d482108ece7ddd7750b73a_az4bdv.png";
+  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto,e_blur:200/v1789228439/IMG_8064_iyqyn2";
 
 const DATE_TEXT = "12TH SEPTEMBER";
 
@@ -19,10 +19,10 @@ function useTypewriterLoop(fullText: string) {
     let i = 0;
     let deleting = false;
 
-    const TYPE_SPEED = 95;
-    const DELETE_SPEED = 55;
-    const HOLD_FULL = 1400;
-    const HOLD_EMPTY = 600;
+    const TYPE_SPEED = 280;
+    const DELETE_SPEED = 180;
+    const HOLD_FULL = 3200;
+    const HOLD_EMPTY = 1400;
 
     function tick() {
       if (cancelled) return;
@@ -125,7 +125,7 @@ export default function Hero() {
             The
           </span>
           <span
-            className="block italic font-black text-gold animate-hero-line"
+            className="block font-black text-gold animate-hero-line"
             style={{
               textShadow: "0 0 30px rgba(212,175,55,0.45)",
               animationDelay: "0.35s",
