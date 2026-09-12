@@ -94,21 +94,21 @@ export default function Hero() {
         className="absolute inset-0"
         style={{
           background:
-            "linear-gradient(to bottom, rgba(10,10,10,0) 0%, rgba(10,10,10,0.55) 55%, rgba(10,10,10,0.97) 100%)",
+            "linear-gradient(to bottom, rgba(10,10,10,0) 0%, rgba(10,10,10,0.5) 60%, rgba(10,10,10,0.97) 100%)",
         }}
       />
 
       {/* looping typewriter date, set directly into the image */}
-      <div className="absolute top-[16%] left-1/2 -translate-x-1/2 z-[2] flex items-center justify-center px-6">
+      <div className="absolute top-[10%] left-1/2 -translate-x-1/2 z-[2] flex items-center justify-center px-6 min-h-[2.5em]">
         <span
-          className="font-body text-[0.72rem] sm:text-[0.85rem] tracking-[0.55em] uppercase text-gold whitespace-nowrap"
-          style={{ textShadow: "0 0 14px rgba(212,175,55,0.55)" }}
+          className="font-display font-normal text-[1.6rem] sm:text-[2.4rem] tracking-[0.08em] uppercase text-gold whitespace-nowrap"
+          style={{ textShadow: "0 0 24px rgba(212,175,55,0.65), 0 0 60px rgba(212,175,55,0.25)" }}
         >
           {dateText}
         </span>
         <span
-          className="ml-1 inline-block h-[1em] w-[2px] bg-gold animate-pulse"
-          style={{ boxShadow: "0 0 8px rgba(212,175,55,0.7)" }}
+          className="ml-1 inline-block h-[0.9em] w-[3px] bg-gold animate-pulse"
+          style={{ boxShadow: "0 0 10px rgba(212,175,55,0.8)" }}
           aria-hidden="true"
         />
       </div>
@@ -117,14 +117,17 @@ export default function Hero() {
         ref={contentRef}
         className="relative z-[2] text-center will-change-transform"
       >
-        <h1 className="font-display font-normal leading-[0.9] tracking-wide text-ink text-[clamp(4.5rem,15vw,11rem)]">
-          <span className="block animate-hero-line" style={{ animationDelay: "0.1s" }}>
+        <h1 className="font-editorial leading-[0.85] text-ink text-[clamp(3.6rem,12vw,8.5rem)]">
+          <span
+            className="block font-bold animate-hero-line"
+            style={{ animationDelay: "0.1s" }}
+          >
             The
           </span>
           <span
-            className="block text-gold animate-hero-line"
+            className="block italic font-black text-gold animate-hero-line"
             style={{
-              textShadow: "0 0 20px rgba(212,175,55,0.4)",
+              textShadow: "0 0 30px rgba(212,175,55,0.45)",
               animationDelay: "0.35s",
             }}
           >
