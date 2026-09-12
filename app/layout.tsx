@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Anton, Jost } from "next/font/google";
+import { Anton, Jost, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
 const anton = Anton({
@@ -14,6 +14,13 @@ const jost = Jost({
   variable: "--font-jost",
 });
 
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["700", "900"],
+  style: ["normal", "italic"],
+  variable: "--font-playfair",
+});
+
 export const metadata: Metadata = {
   title: "DAVE — The Gallery",
   description: "David Ajibua — captured, kept, celebrated",
@@ -26,7 +33,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${anton.variable} ${jost.variable} font-body`}>
+      <body className={`${anton.variable} ${jost.variable} ${playfair.variable} font-body`}>
         <div className="grain" />
         {children}
       </body>
