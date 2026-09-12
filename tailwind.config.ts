@@ -16,6 +16,7 @@ const config: Config = {
         display: ["var(--font-anton)", "sans-serif"],
         body: ["var(--font-jost)", "sans-serif"],
         editorial: ["var(--font-playfair)", "serif"],
+        graffiti: ["var(--font-nabla)", "sans-serif"],
       },
     },
   },
