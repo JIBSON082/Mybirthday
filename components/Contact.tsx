@@ -67,17 +67,8 @@ export default function Contact() {
           transform: visible ? "translateY(0)" : "translateY(16px)",
         }}
       >
-        <span className="font-body text-[0.68rem] uppercase tracking-[0.35em] text-gold">
-          Say hello
-        </span>
         <h2 className="mt-4 font-display text-[clamp(2.2rem,6.5vw,3.6rem)] leading-[1.05] tracking-wide text-ink">
-          Let&apos;s{" "}
-          <span
-            className="text-gold"
-            style={{ textShadow: "0 0 20px rgba(212,175,55,0.4)" }}
-          >
-            keep in touch
-          </span>
+          Hello, let&apos;s <span className="text-gold">keep in touch</span>
         </h2>
         <p className="mx-auto mt-5 max-w-md font-body text-[0.95rem] leading-relaxed text-ink/70">
           Want something like this built for you, or have an idea in mind?
