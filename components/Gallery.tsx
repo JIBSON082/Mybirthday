@@ -15,6 +15,8 @@ const IMAGES = [
   "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto/v1789228440/IMG_8054_bvbtwe",
 ];
 
+const AUTOPLAY_MS = 3800;
+
 function pad(n: number) {
   return String(n + 1).padStart(2, "0");
 }
@@ -32,13 +34,26 @@ export default function Gallery() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [zipping, setZipping] = useState(false);
   const [zipFailed, setZipFailed] = useState(false);
+  const [paused, setPaused] = useState(false);
   const touchStartX = useRef<number | null>(null);
+  const autoplayRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const goTo = useCallback((i: number) => {
     setActive(((i % IMAGES.length) + IMAGES.length) % IMAGES.length);
   }, []);
   const next = useCallback(() => goTo(active + 1), [active, goTo]);
   const prev = useCallback(() => goTo(active - 1), [active, goTo]);
+
+  // autoplay — pauses on hover/touch/lightbox, resumes after
+  useEffect(() => {
+    if (paused || lightboxIndex !== null) return;
+    autoplayRef.current = setInterval(() => {
+      setActive((a) => (a + 1) % IMAGES.length);
+    }, AUTOPLAY_MS);
+    return () => {
+      if (autoplayRef.current) clearInterval(autoplayRef.current);
+    };
+  }, [paused, lightboxIndex]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -57,6 +72,7 @@ export default function Gallery() {
 
   function onTouchStart(e: React.TouchEvent) {
     touchStartX.current = e.touches[0].clientX;
+    setPaused(true);
   }
   function onTouchEnd(e: React.TouchEvent) {
     if (touchStartX.current === null) return;
@@ -65,6 +81,7 @@ export default function Gallery() {
       delta < 0 ? next() : prev();
     }
     touchStartX.current = null;
+    setTimeout(() => setPaused(false), 1200);
   }
 
   async function downloadImage(src: string, filename: string) {
@@ -104,7 +121,7 @@ export default function Gallery() {
     <section className="relative z-[2] bg-bg px-[5vw] pt-36 pb-32 sm:pt-40">
       <div className="mb-12 flex items-baseline justify-between flex-wrap gap-6">
         <h2 className="font-display text-[clamp(2.2rem,5.5vw,3.6rem)] tracking-wide text-ink">
-          The Moments
+          Frozen In Frame
         </h2>
         <button
           onClick={handleDownloadAll}
@@ -118,28 +135,38 @@ export default function Gallery() {
 
       {/* 3D coverflow slider */}
       <div
-        className="relative h-[52vh] w-full overflow-hidden rounded-md sm:h-[64vh]"
+        className="relative h-[52vh] w-full overflow-hidden sm:h-[64vh]"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
       >
-        {/* blurred, enlarged backdrop of the active photo */}
+        {/* blurred, enlarged backdrop of the active photo — this is what makes the
+            cards feel like they live IN the page instead of sitting on a hard bg */}
         {IMAGES.map((src, i) => (
           <div
             key={`bg-${src}`}
-            className="absolute inset-0 scale-125 bg-cover bg-center transition-opacity duration-700 ease-out"
+            className="absolute inset-0 scale-150 bg-cover bg-center transition-opacity duration-[1400ms] ease-out"
             style={{
               backgroundImage: `url(${src})`,
-              filter: "blur(40px)",
-              opacity: i === active ? 0.55 : 0,
+              filter: "blur(60px) saturate(1.15)",
+              opacity: i === active ? 0.65 : 0,
             }}
           />
         ))}
-        <div className="absolute inset-0 bg-black/45" />
+        {/* darken + blend backdrop into page bg at top/bottom so there's no hard seam */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to bottom, var(--bg, #0a0a0a) 0%, rgba(10,10,10,0.35) 18%, rgba(10,10,10,0.35) 82%, var(--bg, #0a0a0a) 100%)",
+          }}
+        />
 
         {/* the card stack */}
         <div
           className="relative flex h-full items-center justify-center"
-          style={{ perspective: "1400px" }}
+          style={{ perspective: "1600px" }}
         >
           {IMAGES.map((src, i) => {
             const offset = wrappedOffset(i, active, IMAGES.length);
@@ -153,37 +180,52 @@ export default function Gallery() {
               <div
                 key={src}
                 onClick={() => (isActive ? setLightboxIndex(i) : goTo(i))}
-                className="absolute h-[85%] w-[56%] max-w-[340px] cursor-pointer overflow-hidden rounded-sm shadow-2xl transition-all ease-[cubic-bezier(0.22,1,0.36,1)] sm:w-[38%]"
+                className="absolute h-[85%] w-[56%] max-w-[340px] cursor-pointer sm:w-[38%]"
                 style={{
-                  transform: `translateX(${offset * 52}%) scale(${1 - abs * 0.16}) rotateY(${offset * -32}deg)`,
+                  transform: `translateX(${offset * 52}%) translateZ(${isActive ? 0 : -abs * 80}px) scale(${1 - abs * 0.16}) rotateY(${offset * -32}deg)`,
                   opacity: isActive ? 1 : abs === 1 ? 0.5 : 0.15,
                   zIndex: 10 - abs,
                   pointerEvents: isDeep ? "none" : "auto",
                   transformStyle: "preserve-3d",
                   backfaceVisibility: "hidden",
-                  transitionDuration: "700ms",
+                  transition:
+                    "transform 900ms cubic-bezier(0.22,1,0.36,1), opacity 900ms ease",
                 }}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={src}
-                  alt={`Photo ${i + 1}`}
-                  className="h-full w-full object-cover"
-                  loading={abs <= 1 ? "eager" : "lazy"}
-                />
-                {isActive && (
-                  <div className="pointer-events-none absolute inset-0 flex items-end justify-between bg-gradient-to-t from-black/60 via-transparent to-transparent p-4">
-                    <span
-                      className="font-display text-sm text-gold"
-                      style={{ textShadow: "0 0 10px rgba(212,175,55,0.6)" }}
-                    >
-                      {pad(i)}
-                    </span>
-                    <span className="rounded-full border border-gold/70 px-3 py-1 text-[0.62rem] uppercase tracking-[0.25em] text-ink">
-                      View
-                    </span>
-                  </div>
-                )}
+                {/* image itself has no hard rectangle edge — mask fades it into
+                    the blurred backdrop behind it, so there's no visible border */}
+                <div
+                  className="relative h-full w-full overflow-hidden"
+                  style={{
+                    maskImage: isActive
+                      ? "radial-gradient(ellipse 92% 96% at center, black 62%, transparent 100%)"
+                      : "linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)",
+                    WebkitMaskImage: isActive
+                      ? "radial-gradient(ellipse 92% 96% at center, black 62%, transparent 100%)"
+                      : "linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)",
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={src}
+                    alt={`Photo ${i + 1}`}
+                    className="h-full w-full object-cover"
+                    loading={abs <= 1 ? "eager" : "lazy"}
+                  />
+                  {isActive && (
+                    <div className="pointer-events-none absolute inset-0 flex items-end justify-between bg-gradient-to-t from-black/60 via-transparent to-transparent p-4">
+                      <span
+                        className="font-display text-sm text-gold"
+                        style={{ textShadow: "0 0 10px rgba(212,175,55,0.6)" }}
+                      >
+                        {pad(i)}
+                      </span>
+                      <span className="rounded-full border border-gold/70 px-3 py-1 text-[0.62rem] uppercase tracking-[0.25em] text-ink">
+                        View
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -191,14 +233,22 @@ export default function Gallery() {
 
         {/* prev / next controls */}
         <button
-          onClick={prev}
+          onClick={() => {
+            prev();
+            setPaused(true);
+            setTimeout(() => setPaused(false), 1200);
+          }}
           aria-label="Previous photo"
           className="absolute left-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-ink/30 bg-black/30 text-xl text-ink backdrop-blur-sm transition-colors hover:border-gold hover:text-gold sm:left-6"
         >
           ‹
         </button>
         <button
-          onClick={next}
+          onClick={() => {
+            next();
+            setPaused(true);
+            setTimeout(() => setPaused(false), 1200);
+          }}
           aria-label="Next photo"
           className="absolute right-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-ink/30 bg-black/30 text-xl text-ink backdrop-blur-sm transition-colors hover:border-gold hover:text-gold sm:right-6"
         >
@@ -218,7 +268,11 @@ export default function Gallery() {
         {IMAGES.map((_, i) => (
           <button
             key={i}
-            onClick={() => goTo(i)}
+            onClick={() => {
+              goTo(i);
+              setPaused(true);
+              setTimeout(() => setPaused(false), 1200);
+            }}
             aria-label={`Go to photo ${i + 1}`}
             className="h-1.5 rounded-full transition-all duration-300"
             style={{
