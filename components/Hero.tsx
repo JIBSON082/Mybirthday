@@ -122,21 +122,38 @@ export default function Hero() {
       />
 
       {/* looping typewriter date — flat gold, no glow, to match the rest of
-          the site (Contact section deliberately dropped glow effects) */}
+          the site (Contact section deliberately dropped glow effects).
+          The invisible ghost span reserves the full width up front so the
+          visible text always stays centered as it types/deletes, instead of
+          the whole line drifting as its width changes. */}
       <div
-        className="absolute top-[10%] left-1/2 -translate-x-1/2 z-[2] flex items-center justify-center px-6 min-h-[2.5em] transition-all duration-700 ease-out"
+        className="absolute top-[10%] left-1/2 -translate-x-1/2 z-[2] min-h-[2.5em] transition-all duration-700 ease-out"
         style={{
           opacity: mounted ? 1 : 0,
-          transform: mounted ? "translateY(0)" : "translateY(-10px)",
+          transform: mounted
+            ? "translate(-50%, 0)"
+            : "translate(-50%, -10px)",
         }}
       >
-        <span className="font-display font-normal text-[1.6rem] sm:text-[2.4rem] tracking-[0.08em] uppercase text-gold whitespace-nowrap">
-          {dateText}
-        </span>
-        <span
-          className="ml-1 inline-block h-[0.9em] w-[3px] bg-gold animate-pulse"
-          aria-hidden="true"
-        />
+        <div className="relative flex items-center justify-center px-6">
+          {/* ghost: reserves the exact width of the full date text */}
+          <span
+            aria-hidden="true"
+            className="invisible font-display font-normal text-[1.6rem] sm:text-[2.4rem] tracking-[0.08em] uppercase whitespace-nowrap"
+          >
+            {DATE_TEXT}
+          </span>
+          {/* visible typed text, centered over the reserved space */}
+          <span className="absolute inset-0 flex items-center justify-center">
+            <span className="font-display font-normal text-[1.6rem] sm:text-[2.4rem] tracking-[0.08em] uppercase text-gold whitespace-nowrap">
+              {dateText}
+            </span>
+            <span
+              className="ml-1 inline-block h-[0.9em] w-[3px] bg-gold animate-pulse"
+              aria-hidden="true"
+            />
+          </span>
+        </div>
       </div>
 
       <div
