@@ -3,19 +3,37 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const IMAGES = [
-  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto/v1789228443/IMG_8045_hzyzsc",
-  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto/v1789228437/IMG_8047_uav0vv",
-  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto/v1789228450/IMG_8041_ueaxkk",
-  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto/v1789228438/IMG_8030_iqbj5t",
-  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto/v1789228437/IMG_8028_dh4iqr",
-  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto/v1789228439/IMG_8064_iyqyn2",
-  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto/v1789228438/IMG_8026_sgnunr",
-  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto/v1789228440/IMG_8033_nsdn5b",
-  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto/v1789228440/IMG_8050_ekqlng",
-  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto/v1789228440/IMG_8054_bvbtwe",
+  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto,w_800,c_limit/v1789228443/IMG_8045_hzyzsc",
+  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto,w_800,c_limit/v1789228437/IMG_8047_uav0vv",
+  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto,w_800,c_limit/v1789228450/IMG_8041_ueaxkk",
+  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto,w_800,c_limit/v1789228438/IMG_8030_iqbj5t",
+  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto,w_800,c_limit/v1789228437/IMG_8028_dh4iqr",
+  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto,w_800,c_limit/v1789228439/IMG_8064_iyqyn2",
+  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto,w_800,c_limit/v1789228438/IMG_8026_sgnunr",
+  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto,w_800,c_limit/v1789228440/IMG_8033_nsdn5b",
+  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto,w_800,c_limit/v1789228440/IMG_8050_ekqlng",
+  "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto,w_800,c_limit/v1789228440/IMG_8054_bvbtwe",
 ];
 
 const AUTOPLAY_MS = 3800;
+
+// Module-level cache: preloading starts the moment this file is evaluated by
+// the browser (as soon as it's part of the bundle), not when the Gallery
+// component mounts. If Gallery is lazy/below-the-fold, mount can happen right
+// as the user scrolls to it — which is too late to avoid the "forming" flash.
+// Starting at module scope buys extra lead time while the user is still
+// higher up the page.
+const preloadReady = new Set<number>();
+const preloadListeners = new Set<() => void>();
+IMAGES.forEach((src, i) => {
+  const img = new Image();
+  img.decoding = "async";
+  img.onload = () => {
+    preloadReady.add(i);
+    preloadListeners.forEach((fn) => fn());
+  };
+  img.src = src;
+});
 
 function pad(n: number) {
   return String(n + 1).padStart(2, "0");
@@ -32,12 +50,14 @@ function wrappedOffset(index: number, active: number, len: number) {
 export default function Gallery() {
   const [active, setActive] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [zipping, setZipping] = useState(false);
-  const [zipFailed, setZipFailed] = useState(false);
   const [paused, setPaused] = useState(false);
   const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
   // Once an image is decoded, we never show a placeholder for it again.
-  const [ready, setReady] = useState<boolean[]>(() => IMAGES.map(() => false));
+  // Seeded from the module-level cache in case preloading already finished
+  // (or partially finished) before this component even mounted.
+  const [ready, setReady] = useState<boolean[]>(() =>
+    IMAGES.map((_, i) => preloadReady.has(i))
+  );
   const touchStartX = useRef<number | null>(null);
   const autoplayRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // Cache blobs we've already fetched so downloads are instant on repeat clicks.
@@ -49,28 +69,16 @@ export default function Gallery() {
   const next = useCallback(() => goTo(active + 1), [active, goTo]);
   const prev = useCallback(() => goTo(active - 1), [active, goTo]);
 
-  // ---- FIX 1: preload every image up front so nothing "forms" mid-scroll ----
-  // We warm the browser's HTTP cache with real Image() objects (not the <img>
-  // tags themselves, which only exist once a slide is close to active). Once
-  // decoded, the <img> below reads from cache instantly — no flash.
+  // ---- FIX 1: subscribe to the module-level preloader ----
+  // The actual fetching already started at module scope (see above). Here we
+  // just sync this component's `ready` state whenever another image finishes
+  // decoding, so cards/backdrops fade in as soon as each one is available.
   useEffect(() => {
-    let cancelled = false;
-    IMAGES.forEach((src, i) => {
-      const img = new Image();
-      img.decoding = "async";
-      img.onload = () => {
-        if (cancelled) return;
-        setReady((r) => {
-          if (r[i]) return r;
-          const next = [...r];
-          next[i] = true;
-          return next;
-        });
-      };
-      img.src = src;
-    });
+    const sync = () => setReady(IMAGES.map((_, i) => preloadReady.has(i)));
+    sync(); // catch anything that finished between module eval and mount
+    preloadListeners.add(sync);
     return () => {
-      cancelled = true;
+      preloadListeners.delete(sync);
     };
   }, []);
 
@@ -149,68 +157,12 @@ export default function Gallery() {
     }
   }
 
-  // ---- FIX 2: resilient "Download All" ----
-  // The old version fetched all 10 images client-side and failed as a whole
-  // if any single request hiccuped, with no visibility into which one broke.
-  // We now: (a) reuse anything already cached from individual downloads,
-  // (b) fetch the rest with Promise.allSettled so one failure doesn't kill
-  // the batch, and (c) only fail if EVERY image failed, surfacing a clearer
-  // error otherwise.
-  async function handleDownloadAll() {
-    setZipping(true);
-    setZipFailed(false);
-    try {
-      const JSZip = (await import("jszip")).default;
-      const { saveAs } = await import("file-saver");
-      const zip = new JSZip();
-      const folder = zip.folder("DAVE_gallery")!;
-
-      const results = await Promise.allSettled(
-        IMAGES.map(async (src, i) => {
-          let blob = blobCache.current.get(src);
-          if (!blob) {
-            const res = await fetch(src, { mode: "cors" });
-            if (!res.ok) throw new Error(`HTTP ${res.status} for image ${i + 1}`);
-            blob = await res.blob();
-            blobCache.current.set(src, blob);
-          }
-          folder.file(`DAVE_${i + 1}.jpg`, blob);
-        })
-      );
-
-      const failures = results.filter((r) => r.status === "rejected");
-      if (failures.length === IMAGES.length) {
-        throw new Error("All image downloads failed");
-      }
-      if (failures.length > 0) {
-        console.warn(`${failures.length} of ${IMAGES.length} images failed to zip`, failures);
-      }
-
-      const content = await zip.generateAsync({ type: "blob" });
-      saveAs(content, "DAVE_gallery.zip");
-    } catch (err) {
-      console.error(err);
-      setZipFailed(true);
-      setTimeout(() => setZipFailed(false), 2400);
-    } finally {
-      setZipping(false);
-    }
-  }
-
   return (
-    <section className="relative z-[2] bg-bg px-[5vw] pt-36 pb-32 sm:pt-40">
+    <section id="gallery" className="relative z-[2] bg-bg px-[5vw] pt-36 pb-32 sm:pt-40">
       <div className="mb-12 flex items-baseline justify-between flex-wrap gap-6">
         <h2 className="font-display text-[clamp(2.2rem,5.5vw,3.6rem)] tracking-wide text-ink">
           Frozen In Frame
         </h2>
-        <button
-          onClick={handleDownloadAll}
-          disabled={zipping}
-          className="whitespace-nowrap rounded-full border border-gold px-7 py-3 text-[0.78rem] tracking-wide text-gold transition-colors duration-300 hover:bg-gold/10 disabled:cursor-progress disabled:opacity-60"
-          style={{ textShadow: "0 0 8px rgba(212,175,55,0.4)" }}
-        >
-          {zipFailed ? "Failed — retry" : zipping ? "Zipping…" : "Download All"}
-        </button>
       </div>
 
       {/* 3D coverflow slider */}
@@ -223,6 +175,9 @@ export default function Gallery() {
       >
         {/* blurred, enlarged backdrop of the active photo — this is what makes the
             cards feel like they live IN the page instead of sitting on a hard bg */}
+        {/* Backdrop only fades in once the image is actually decoded (ready[i]);
+            otherwise the very first time an index becomes active it fetches
+            cold and "forms" in, same problem as the foreground cards had. */}
         {IMAGES.map((src, i) => (
           <div
             key={`bg-${src}`}
@@ -230,7 +185,7 @@ export default function Gallery() {
             style={{
               backgroundImage: `url(${src})`,
               filter: "blur(60px) saturate(1.15)",
-              opacity: i === active ? 0.65 : 0,
+              opacity: i === active && ready[i] ? 0.65 : 0,
             }}
           />
         ))}
