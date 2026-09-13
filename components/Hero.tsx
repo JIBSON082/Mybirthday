@@ -185,8 +185,10 @@ export default function Hero() {
             style={{
               textShadow: "0 0 30px rgba(212,175,55,0.45)",
               opacity: mounted ? 1 : 0,
-              transform: mounted ? "translate(8px, 0)" : "translate(8px, 28px)",
+              transform: mounted ? "translateY(0)" : "translateY(28px)",
               transitionDelay: "0.35s",
+              // Nudges the text slightly left to balance the italic slant.
+              paddingRight: "0.1em",
             }}
           >
             Gallery
