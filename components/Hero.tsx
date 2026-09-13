@@ -1,6 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Bodoni_Moda } from "next/font/google";
+
+const bodoniModa = Bodoni_Moda({
+  subsets: ["latin"],
+  weight: ["500", "700", "800"],
+  style: ["normal", "italic"],
+});
 
 const HERO_BG =
   "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto,e_blur:200/v1789255624/file_0000000029d482108ece7ddd7750b73a_az4bdv.png";
@@ -19,10 +26,10 @@ function useTypewriterLoop(fullText: string) {
     let i = 0;
     let deleting = false;
 
-    const TYPE_SPEED = 280;
-    const DELETE_SPEED = 180;
-    const HOLD_FULL = 3200;
-    const HOLD_EMPTY = 1400;
+    const TYPE_SPEED = 140;
+    const DELETE_SPEED = 90;
+    const HOLD_FULL = 2600;
+    const HOLD_EMPTY = 1000;
 
     function tick() {
       if (cancelled) return;
