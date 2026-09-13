@@ -61,25 +61,43 @@ function useTypewriterLoop(fullText: string) {
 export default function Hero() {
   const bgRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const tickingRef = useRef(false);
   const dateText = useTypewriterLoop(DATE_TEXT);
+  const [mounted, setMounted] = useState(false);
 
+  // Real entrance: everything starts hidden/offset and settles in on mount,
+  // independent of scroll. This is what was missing before — the old version
+  // only reacted to scroll, so on load the whole hero just appeared at once.
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 60);
+    return () => clearTimeout(t);
+  }, []);
+
+  // rAF-throttled parallax instead of writing styles on every scroll event.
   useEffect(() => {
     const heroHeight = window.innerHeight;
 
-    function onScroll() {
+    function apply() {
       const y = window.scrollY;
       const p = Math.min(y / heroHeight, 1);
       if (bgRef.current) {
-        bgRef.current.style.transform = `translateY(${y * 0.35}px)`;
+        bgRef.current.style.transform = `translateY(${y * 0.35}px) scale(1.08)`;
       }
       if (contentRef.current) {
         contentRef.current.style.transform = `translateY(${-y * 0.25}px)`;
         contentRef.current.style.opacity = String(1 - p * 1.15);
       }
+      tickingRef.current = false;
+    }
+
+    function onScroll() {
+      if (tickingRef.current) return;
+      tickingRef.current = true;
+      requestAnimationFrame(apply);
     }
 
     window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
+    apply();
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
@@ -87,28 +105,36 @@ export default function Hero() {
     <section className="relative h-screen w-full flex flex-col items-center justify-center overflow-hidden">
       <div
         ref={bgRef}
-        className="absolute -inset-x-[6vw] -inset-y-[6vh] bg-cover bg-center will-change-transform"
-        style={{ backgroundImage: `url(${HERO_BG})` }}
+        className="absolute -inset-x-[6vw] -inset-y-[6vh] bg-cover will-change-transform"
+        style={{
+          backgroundImage: `url(${HERO_BG})`,
+          // biased toward the upper portion of the frame so the subject
+          // sits higher and there's no dead empty band above them
+          backgroundPosition: "center 20%",
+        }}
       />
       <div
         className="absolute inset-0"
         style={{
           background:
-            "linear-gradient(to bottom, rgba(10,10,10,0) 0%, rgba(10,10,10,0.5) 60%, rgba(10,10,10,0.97) 100%)",
+            "linear-gradient(to bottom, rgba(10,10,10,0.15) 0%, rgba(10,10,10,0.45) 55%, rgba(10,10,10,0.97) 100%)",
         }}
       />
 
-      {/* looping typewriter date, set directly into the image */}
-      <div className="absolute top-[10%] left-1/2 -translate-x-1/2 z-[2] flex items-center justify-center px-6 min-h-[2.5em]">
-        <span
-          className="font-display font-normal text-[1.6rem] sm:text-[2.4rem] tracking-[0.08em] uppercase text-gold whitespace-nowrap"
-          style={{ textShadow: "0 0 24px rgba(212,175,55,0.65), 0 0 60px rgba(212,175,55,0.25)" }}
-        >
+      {/* looping typewriter date — flat gold, no glow, to match the rest of
+          the site (Contact section deliberately dropped glow effects) */}
+      <div
+        className="absolute top-[10%] left-1/2 -translate-x-1/2 z-[2] flex items-center justify-center px-6 min-h-[2.5em] transition-all duration-700 ease-out"
+        style={{
+          opacity: mounted ? 1 : 0,
+          transform: mounted ? "translateY(0)" : "translateY(-10px)",
+        }}
+      >
+        <span className="font-display font-normal text-[1.6rem] sm:text-[2.4rem] tracking-[0.08em] uppercase text-gold whitespace-nowrap">
           {dateText}
         </span>
         <span
           className="ml-1 inline-block h-[0.9em] w-[3px] bg-gold animate-pulse"
-          style={{ boxShadow: "0 0 10px rgba(212,175,55,0.8)" }}
           aria-hidden="true"
         />
       </div>
@@ -119,16 +145,22 @@ export default function Hero() {
       >
         <h1 className="font-editorial leading-[0.85] text-ink text-[clamp(3.6rem,12vw,8.5rem)]">
           <span
-            className="block font-bold animate-hero-line"
-            style={{ animationDelay: "0.1s" }}
+            className="block font-bold transition-all duration-700 ease-out"
+            style={{
+              opacity: mounted ? 1 : 0,
+              transform: mounted ? "translateY(0)" : "translateY(28px)",
+              transitionDelay: "0.15s",
+            }}
           >
             The
           </span>
           <span
-            className="block font-black text-gold animate-hero-line"
+            className="block font-black text-gold transition-all duration-700 ease-out"
             style={{
               textShadow: "0 0 30px rgba(212,175,55,0.45)",
-              animationDelay: "0.35s",
+              opacity: mounted ? 1 : 0,
+              transform: mounted ? "translateY(0)" : "translateY(28px)",
+              transitionDelay: "0.35s",
             }}
           >
             Gallery
@@ -136,17 +168,43 @@ export default function Hero() {
         </h1>
       </div>
 
-      <div className="absolute bottom-11 left-1/2 -translate-x-1/2 z-[2] flex flex-col items-center gap-2 opacity-75">
+      <div
+        className="absolute bottom-11 left-1/2 -translate-x-1/2 z-[2] flex flex-col items-center gap-2 opacity-0 transition-opacity duration-700"
+        style={{ opacity: mounted ? 0.75 : 0, transitionDelay: "0.6s" }}
+      >
         <span className="text-[0.62rem] tracking-[0.3em] uppercase">
           Scroll
         </span>
-        <div
-          className="scroll-cue-line w-px h-[34px]"
-          style={{
-            background: "linear-gradient(to bottom, #d4af37, transparent)",
-          }}
-        />
+        <div className="relative h-[34px] w-px overflow-hidden">
+          <div
+            className="absolute inset-0"
+            style={{ background: "rgba(212,175,55,0.25)" }}
+          />
+          <div className="scroll-dot absolute left-0 top-0 h-2 w-px bg-gold" />
+        </div>
       </div>
+
+      <style jsx>{`
+        .scroll-dot {
+          animation: scrollDown 1.8s ease-in-out infinite;
+        }
+        @keyframes scrollDown {
+          0% {
+            transform: translateY(-8px);
+            opacity: 0;
+          }
+          20% {
+            opacity: 1;
+          }
+          80% {
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(34px);
+            opacity: 0;
+          }
+        }
+      `}</style>
     </section>
   );
 }
