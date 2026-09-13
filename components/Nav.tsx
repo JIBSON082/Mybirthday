@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const LINKS = [
   { label: "Home", href: "#", num: "01" },
@@ -10,10 +10,47 @@ const LINKS = [
 
 export default function Nav() {
   const [open, setOpen] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    lastScrollY.current = window.scrollY;
+
+    function onScroll() {
+      const currentY = window.scrollY;
+      const delta = currentY - lastScrollY.current;
+
+      // always show near the very top of the page, regardless of direction
+      if (currentY < 80) {
+        setHidden(false);
+      } else if (delta > 4) {
+        // scrolling down past the threshold — hide
+        setHidden(true);
+      } else if (delta < -4) {
+        // scrolling up — reveal
+        setHidden(false);
+      }
+
+      lastScrollY.current = currentY;
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // never hide the bar while the mobile menu itself is open
+  const isHidden = hidden && !open;
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-[5vw] py-6">
+      <nav
+        className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-[5vw] py-6 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+        style={{
+          transform: isHidden ? "translateY(-100%)" : "translateY(0)",
+          opacity: isHidden ? 0 : 1,
+          pointerEvents: isHidden ? "none" : "auto",
+        }}
+      >
         <div
           className="font-display text-[2.4rem] leading-none tracking-wide transition-colors duration-300"
           style={{
