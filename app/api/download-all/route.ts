@@ -36,8 +36,9 @@ export async function GET() {
     );
 
     const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });
+    const zipBytes = new Uint8Array(zipBuffer);
 
-    return new Response(zipBuffer, {
+    return new Response(zipBytes, {
       status: 200,
       headers: {
         "Content-Type": "application/zip",
