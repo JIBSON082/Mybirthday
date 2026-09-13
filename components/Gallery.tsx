@@ -25,15 +25,17 @@ const AUTOPLAY_MS = 3800;
 // higher up the page.
 const preloadReady = new Set<number>();
 const preloadListeners = new Set<() => void>();
-IMAGES.forEach((src, i) => {
-  const img = new Image();
-  img.decoding = "async";
-  img.onload = () => {
-    preloadReady.add(i);
-    preloadListeners.forEach((fn) => fn());
-  };
-  img.src = src;
-});
+if (typeof window !== "undefined") {
+  IMAGES.forEach((src, i) => {
+    const img = new window.Image();
+    img.decoding = "async";
+    img.onload = () => {
+      preloadReady.add(i);
+      preloadListeners.forEach((fn) => fn());
+    };
+    img.src = src;
+  });
+}
 
 function pad(n: number) {
   return String(n + 1).padStart(2, "0");
