@@ -147,16 +147,21 @@ export default function Gallery() {
             if (abs > 2) return null;
 
             const isActive = offset === 0;
+            const isDeep = abs === 2;
 
             return (
               <div
                 key={src}
                 onClick={() => (isActive ? setLightboxIndex(i) : goTo(i))}
-                className="absolute h-[85%] w-[58%] max-w-[360px] cursor-pointer overflow-hidden rounded-sm shadow-2xl transition-all duration-600 ease-[cubic-bezier(0.22,1,0.36,1)] sm:w-[42%]"
+                className="absolute h-[85%] w-[56%] max-w-[340px] cursor-pointer overflow-hidden rounded-sm shadow-2xl transition-all ease-[cubic-bezier(0.22,1,0.36,1)] sm:w-[38%]"
                 style={{
-                  transform: `translateX(${offset * 62}%) scale(${1 - abs * 0.18}) rotateY(${offset * -28}deg)`,
-                  opacity: abs === 0 ? 1 : abs === 1 ? 0.55 : 0.18,
+                  transform: `translateX(${offset * 52}%) scale(${1 - abs * 0.16}) rotateY(${offset * -32}deg)`,
+                  opacity: isActive ? 1 : abs === 1 ? 0.5 : 0.15,
                   zIndex: 10 - abs,
+                  pointerEvents: isDeep ? "none" : "auto",
+                  transformStyle: "preserve-3d",
+                  backfaceVisibility: "hidden",
+                  transitionDuration: "700ms",
                 }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
