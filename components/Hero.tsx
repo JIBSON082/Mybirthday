@@ -19,8 +19,8 @@ function useTypewriterLoop(fullText: string) {
     let i = 0;
     let deleting = false;
 
-    const TYPE_SPEED = 280;
-    const DELETE_SPEED = 180;
+    const TYPE_SPEED = 450;
+    const DELETE_SPEED = 280;
     const HOLD_FULL = 3200;
     const HOLD_EMPTY = 1400;
 
