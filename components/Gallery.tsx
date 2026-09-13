@@ -104,23 +104,13 @@ export default function Gallery() {
     setZipping(true);
     setZipFailed(false);
     try {
-      const JSZip = (await import("jszip")).default;
+      // Zipping happens server-side now (see app/api/download-all/route.ts)
+      // so this never hits Cloudinary's CORS restrictions from the browser.
+      const res = await fetch("/api/download-all");
+      if (!res.ok) throw new Error(`Server responded ${res.status}`);
+      const blob = await res.blob();
       const { saveAs } = await import("file-saver");
-      const zip = new JSZip();
-      const folder = zip.folder("DAVE_gallery")!;
-      await Promise.all(
-        IMAGES.map(async (src, i) => {
-          // fetch() needs Cloudinary to return CORS headers to read bytes for
-          // zipping — if your Cloudinary account/plan doesn't allow that,
-          // this will throw and the catch block below reports "Failed — retry".
-          const res = await fetch(src, { mode: "cors" });
-          if (!res.ok) throw new Error(`Failed to fetch image ${i + 1}: ${res.status}`);
-          const blob = await res.blob();
-          folder.file(`DAVE_${i + 1}.jpg`, blob);
-        })
-      );
-      const content = await zip.generateAsync({ type: "blob" });
-      saveAs(content, "DAVE_gallery.zip");
+      saveAs(blob, "DAVE_gallery.zip");
     } catch (err) {
       console.error(err);
       setZipFailed(true);
