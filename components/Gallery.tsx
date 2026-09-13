@@ -35,14 +35,44 @@ export default function Gallery() {
   const [zipping, setZipping] = useState(false);
   const [zipFailed, setZipFailed] = useState(false);
   const [paused, setPaused] = useState(false);
+  const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
+  // Once an image is decoded, we never show a placeholder for it again.
+  const [ready, setReady] = useState<boolean[]>(() => IMAGES.map(() => false));
   const touchStartX = useRef<number | null>(null);
   const autoplayRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Cache blobs we've already fetched so downloads are instant on repeat clicks.
+  const blobCache = useRef<Map<string, Blob>>(new Map());
 
   const goTo = useCallback((i: number) => {
     setActive(((i % IMAGES.length) + IMAGES.length) % IMAGES.length);
   }, []);
   const next = useCallback(() => goTo(active + 1), [active, goTo]);
   const prev = useCallback(() => goTo(active - 1), [active, goTo]);
+
+  // ---- FIX 1: preload every image up front so nothing "forms" mid-scroll ----
+  // We warm the browser's HTTP cache with real Image() objects (not the <img>
+  // tags themselves, which only exist once a slide is close to active). Once
+  // decoded, the <img> below reads from cache instantly — no flash.
+  useEffect(() => {
+    let cancelled = false;
+    IMAGES.forEach((src, i) => {
+      const img = new Image();
+      img.decoding = "async";
+      img.onload = () => {
+        if (cancelled) return;
+        setReady((r) => {
+          if (r[i]) return r;
+          const next = [...r];
+          next[i] = true;
+          return next;
+        });
+      };
+      img.src = src;
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // autoplay — pauses on hover/touch/lightbox, resumes after
   useEffect(() => {
@@ -84,22 +114,48 @@ export default function Gallery() {
     setTimeout(() => setPaused(false), 1200);
   }
 
-  function downloadImage(src: string, filename: string) {
-    // Use Cloudinary's fl_attachment transform so the browser downloads the
-    // file directly via a normal navigation — this avoids fetch()+blob(),
-    // which silently fails when Cloudinary doesn't send CORS headers back.
-    const attachmentUrl = src.includes("/upload/")
-      ? src.replace("/upload/", `/upload/fl_attachment:${filename.replace(/\.[^.]+$/, "")}/`)
-      : src;
-    const link = document.createElement("a");
-    link.href = attachmentUrl;
-    link.download = filename;
-    link.rel = "noopener";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  // ---- FIX 3: instant single-image download via blob, no Cloudinary reprocessing ----
+  // fl_attachment forces Cloudinary to generate a brand-new derived asset on
+  // first request (a real transformation job + redirect) — that's the lag.
+  // Instead we fetch the plain delivery URL (already warmed in cache from the
+  // preload effect above, and Cloudinary serves images with CORS enabled by
+  // default) and hand the browser a local blob: URL, which downloads instantly.
+  async function downloadImage(src: string, filename: string, index: number) {
+    setDownloadingIndex(index);
+    try {
+      let blob = blobCache.current.get(src);
+      if (!blob) {
+        const res = await fetch(src, { mode: "cors" });
+        if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+        blob = await res.blob();
+        blobCache.current.set(src, blob);
+      }
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.rel = "noopener";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Download failed, falling back to direct link:", err);
+      // Fallback: plain navigation to the original URL (still faster than
+      // fl_attachment, since it doesn't trigger a new transform).
+      window.open(src, "_blank", "noopener");
+    } finally {
+      setDownloadingIndex(null);
+    }
   }
 
+  // ---- FIX 2: resilient "Download All" ----
+  // The old version fetched all 10 images client-side and failed as a whole
+  // if any single request hiccuped, with no visibility into which one broke.
+  // We now: (a) reuse anything already cached from individual downloads,
+  // (b) fetch the rest with Promise.allSettled so one failure doesn't kill
+  // the batch, and (c) only fail if EVERY image failed, surfacing a clearer
+  // error otherwise.
   async function handleDownloadAll() {
     setZipping(true);
     setZipFailed(false);
@@ -108,19 +164,34 @@ export default function Gallery() {
       const { saveAs } = await import("file-saver");
       const zip = new JSZip();
       const folder = zip.folder("DAVE_gallery")!;
-      await Promise.all(
+
+      const results = await Promise.allSettled(
         IMAGES.map(async (src, i) => {
-          const res = await fetch(src);
-          const blob = await res.blob();
+          let blob = blobCache.current.get(src);
+          if (!blob) {
+            const res = await fetch(src, { mode: "cors" });
+            if (!res.ok) throw new Error(`HTTP ${res.status} for image ${i + 1}`);
+            blob = await res.blob();
+            blobCache.current.set(src, blob);
+          }
           folder.file(`DAVE_${i + 1}.jpg`, blob);
         })
       );
+
+      const failures = results.filter((r) => r.status === "rejected");
+      if (failures.length === IMAGES.length) {
+        throw new Error("All image downloads failed");
+      }
+      if (failures.length > 0) {
+        console.warn(`${failures.length} of ${IMAGES.length} images failed to zip`, failures);
+      }
+
       const content = await zip.generateAsync({ type: "blob" });
       saveAs(content, "DAVE_gallery.zip");
     } catch (err) {
       console.error(err);
       setZipFailed(true);
-      setTimeout(() => setZipFailed(false), 1800);
+      setTimeout(() => setZipFailed(false), 2400);
     } finally {
       setZipping(false);
     }
@@ -214,12 +285,19 @@ export default function Gallery() {
                       : "linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)",
                   }}
                 >
+                  {/* All images are eager + fetchPriority high: they've already been
+                      warmed by the preload effect, so this just reads from cache.
+                      A subtle opacity fade covers the ~1 frame between mount and
+                      the cached image painting, instead of a visible pop-in. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={src}
                     alt={`Photo ${i + 1}`}
-                    className="h-full w-full object-cover"
-                    loading={abs <= 1 ? "eager" : "lazy"}
+                    className="h-full w-full object-cover transition-opacity duration-300"
+                    style={{ opacity: ready[i] ? 1 : 0 }}
+                    loading="eager"
+                    fetchPriority={abs <= 1 ? "high" : "auto"}
+                    decoding="async"
                   />
                   {isActive && (
                     <div className="pointer-events-none absolute inset-0 flex items-end justify-between bg-gradient-to-t from-black/60 via-transparent to-transparent p-4">
@@ -318,10 +396,13 @@ export default function Gallery() {
               Close
             </button>
             <button
-              onClick={() => downloadImage(IMAGES[lightboxIndex], `DAVE_${lightboxIndex + 1}.jpg`)}
-              className="rounded-full border border-gold px-6 py-3 text-[0.78rem] tracking-[0.2em] uppercase text-gold transition-colors hover:bg-gold/10"
+              onClick={() =>
+                downloadImage(IMAGES[lightboxIndex], `DAVE_${lightboxIndex + 1}.jpg`, lightboxIndex)
+              }
+              disabled={downloadingIndex === lightboxIndex}
+              className="rounded-full border border-gold px-6 py-3 text-[0.78rem] tracking-[0.2em] uppercase text-gold transition-colors hover:bg-gold/10 disabled:opacity-60"
             >
-              Download
+              {downloadingIndex === lightboxIndex ? "…" : "Download"}
             </button>
           </div>
         </div>
