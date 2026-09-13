@@ -134,7 +134,7 @@ export default function Hero() {
           visible text always stays centered as it types/deletes, instead of
           the whole line drifting as its width changes. */}
       <div
-        className="absolute top-[10%] left-1/2 -translate-x-1/2 z-[2] min-h-[2.5em] transition-all duration-700 ease-out"
+        className="absolute top-[13%] left-1/2 -translate-x-1/2 z-[2] min-h-[2.5em] transition-all duration-700 ease-out"
         style={{
           opacity: mounted ? 1 : 0,
           transform: mounted
@@ -167,7 +167,9 @@ export default function Hero() {
         ref={contentRef}
         className="relative z-[2] text-center will-change-transform"
       >
-        <h1 className="font-editorial leading-[0.85] text-ink text-[clamp(3.6rem,12vw,8.5rem)]">
+        <h1
+          className={`${bodoniModa.className} leading-[0.85] text-ink text-[clamp(3.6rem,12vw,8.5rem)]`}
+        >
           <span
             className="block font-bold transition-all duration-700 ease-out"
             style={{
@@ -179,11 +181,11 @@ export default function Hero() {
             The
           </span>
           <span
-            className="block font-black text-gold transition-all duration-700 ease-out"
+            className="block font-black italic text-gold transition-all duration-700 ease-out"
             style={{
               textShadow: "0 0 30px rgba(212,175,55,0.45)",
               opacity: mounted ? 1 : 0,
-              transform: mounted ? "translateY(0)" : "translateY(28px)",
+              transform: mounted ? "translate(8px, 0)" : "translate(8px, 28px)",
               transitionDelay: "0.35s",
             }}
           >
