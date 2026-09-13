@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 
+// Full-size source used for the sharp foreground cards and the lightbox.
 const IMAGES = [
   "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto,w_800,c_limit/v1789228443/IMG_8045_hzyzsc",
   "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto,w_800,c_limit/v1789228437/IMG_8047_uav0vv",
@@ -15,27 +17,15 @@ const IMAGES = [
   "https://res.cloudinary.com/dx3k7hbnc/image/upload/f_auto,q_auto,w_800,c_limit/v1789228440/IMG_8054_bvbtwe",
 ];
 
-const AUTOPLAY_MS = 3800;
+// Backdrop source: tiny + already-blurred by Cloudinary itself. The card gets
+// blurred another 60px on top in CSS, so there's zero reason to ship an
+// 800px image just to smear it into mush. This alone cuts backdrop payload
+// by roughly 90%.
+const BACKDROPS = IMAGES.map((src) =>
+  src.replace("f_auto,q_auto,w_800,c_limit", "f_auto,q_auto,w_60,e_blur:400")
+);
 
-// Module-level cache: preloading starts the moment this file is evaluated by
-// the browser (as soon as it's part of the bundle), not when the Gallery
-// component mounts. If Gallery is lazy/below-the-fold, mount can happen right
-// as the user scrolls to it — which is too late to avoid the "forming" flash.
-// Starting at module scope buys extra lead time while the user is still
-// higher up the page.
-const preloadReady = new Set<number>();
-const preloadListeners = new Set<() => void>();
-if (typeof window !== "undefined") {
-  IMAGES.forEach((src, i) => {
-    const img = new window.Image();
-    img.decoding = "async";
-    img.onload = () => {
-      preloadReady.add(i);
-      preloadListeners.forEach((fn) => fn());
-    };
-    img.src = src;
-  });
-}
+const AUTOPLAY_MS = 3800;
 
 function pad(n: number) {
   return String(n + 1).padStart(2, "0");
@@ -54,12 +44,6 @@ export default function Gallery() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [paused, setPaused] = useState(false);
   const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
-  // Once an image is decoded, we never show a placeholder for it again.
-  // Seeded from the module-level cache in case preloading already finished
-  // (or partially finished) before this component even mounted.
-  const [ready, setReady] = useState<boolean[]>(() =>
-    IMAGES.map((_, i) => preloadReady.has(i))
-  );
   const touchStartX = useRef<number | null>(null);
   const autoplayRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // Cache blobs we've already fetched so downloads are instant on repeat clicks.
@@ -70,19 +54,6 @@ export default function Gallery() {
   }, []);
   const next = useCallback(() => goTo(active + 1), [active, goTo]);
   const prev = useCallback(() => goTo(active - 1), [active, goTo]);
-
-  // ---- FIX 1: subscribe to the module-level preloader ----
-  // The actual fetching already started at module scope (see above). Here we
-  // just sync this component's `ready` state whenever another image finishes
-  // decoding, so cards/backdrops fade in as soon as each one is available.
-  useEffect(() => {
-    const sync = () => setReady(IMAGES.map((_, i) => preloadReady.has(i)));
-    sync(); // catch anything that finished between module eval and mount
-    preloadListeners.add(sync);
-    return () => {
-      preloadListeners.delete(sync);
-    };
-  }, []);
 
   // autoplay — pauses on hover/touch/lightbox, resumes after
   useEffect(() => {
@@ -124,12 +95,11 @@ export default function Gallery() {
     setTimeout(() => setPaused(false), 1200);
   }
 
-  // ---- FIX 3: instant single-image download via blob, no Cloudinary reprocessing ----
+  // Instant single-image download via blob, no Cloudinary reprocessing.
   // fl_attachment forces Cloudinary to generate a brand-new derived asset on
   // first request (a real transformation job + redirect) — that's the lag.
-  // Instead we fetch the plain delivery URL (already warmed in cache from the
-  // preload effect above, and Cloudinary serves images with CORS enabled by
-  // default) and hand the browser a local blob: URL, which downloads instantly.
+  // Instead we fetch the plain delivery URL and hand the browser a local
+  // blob: URL, which downloads instantly.
   async function downloadImage(src: string, filename: string, index: number) {
     setDownloadingIndex(index);
     try {
@@ -151,8 +121,6 @@ export default function Gallery() {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Download failed, falling back to direct link:", err);
-      // Fallback: plain navigation to the original URL (still faster than
-      // fl_attachment, since it doesn't trigger a new transform).
       window.open(src, "_blank", "noopener");
     } finally {
       setDownloadingIndex(null);
@@ -175,21 +143,25 @@ export default function Gallery() {
         onMouseEnter={() => setPaused(true)}
         onMouseLeave={() => setPaused(false)}
       >
-        {/* blurred, enlarged backdrop of the active photo — this is what makes the
-            cards feel like they live IN the page instead of sitting on a hard bg */}
-        {/* Backdrop only fades in once the image is actually decoded (ready[i]);
-            otherwise the very first time an index becomes active it fetches
-            cold and "forms" in, same problem as the foreground cards had. */}
-        {IMAGES.map((src, i) => (
+        {/* blurred, enlarged backdrop of the active photo — tiny source image
+            (see BACKDROPS above), so it loads near-instantly even on slow
+            connections. next/image handles this one too, sized to fill. */}
+        {BACKDROPS.map((src, i) => (
           <div
-            key={`bg-${src}`}
-            className="absolute inset-0 scale-150 bg-cover bg-center transition-opacity duration-[1400ms] ease-out"
-            style={{
-              backgroundImage: `url(${src})`,
-              filter: "blur(60px) saturate(1.15)",
-              opacity: i === active && ready[i] ? 0.65 : 0,
-            }}
-          />
+            key={`bg-${IMAGES[i]}`}
+            className="absolute inset-0 scale-150 transition-opacity duration-[1400ms] ease-out"
+            style={{ opacity: i === active ? 0.65 : 0 }}
+          >
+            <Image
+              src={src}
+              alt=""
+              fill
+              sizes="100vw"
+              className="object-cover"
+              style={{ filter: "blur(60px) saturate(1.15)" }}
+              priority={i === 0}
+            />
+          </div>
         ))}
         {/* darken + blend backdrop into page bg at top/bottom so there's no hard seam */}
         <div
@@ -242,19 +214,18 @@ export default function Gallery() {
                       : "linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)",
                   }}
                 >
-                  {/* All images are eager + fetchPriority high: they've already been
-                      warmed by the preload effect, so this just reads from cache.
-                      A subtle opacity fade covers the ~1 frame between mount and
-                      the cached image painting, instead of a visible pop-in. */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  {/* next/image handles resizing, format negotiation and
+                      lazy-loading for us — same approach as Hero.tsx. The
+                      three cards nearest active (abs <= 1) get `priority` so
+                      they're fetched immediately instead of lazily. */}
+                  <Image
                     src={src}
                     alt={`Photo ${i + 1}`}
-                    className="h-full w-full object-cover transition-opacity duration-300"
-                    style={{ opacity: ready[i] ? 1 : 0 }}
-                    loading="eager"
-                    fetchPriority={abs <= 1 ? "high" : "auto"}
-                    decoding="async"
+                    fill
+                    sizes="(max-width: 640px) 56vw, 38vw"
+                    className="object-cover"
+                    priority={abs <= 1}
+                    loading={abs <= 1 ? "eager" : "lazy"}
                   />
                   {isActive && (
                     <div className="pointer-events-none absolute inset-0 flex items-end justify-between bg-gradient-to-t from-black/60 via-transparent to-transparent p-4">
@@ -334,13 +305,17 @@ export default function Gallery() {
             ›
           </button>
 
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            key={lightboxIndex}
-            src={IMAGES[lightboxIndex]}
-            alt={`Photo ${lightboxIndex + 1}`}
-            className="max-h-[68vh] max-w-[min(92vw,900px)] object-contain shadow-2xl animate-lightbox-in"
-          />
+          <div className="relative h-[68vh] w-[min(92vw,900px)]">
+            <Image
+              key={lightboxIndex}
+              src={IMAGES[lightboxIndex]}
+              alt={`Photo ${lightboxIndex + 1}`}
+              fill
+              sizes="92vw"
+              className="object-contain shadow-2xl animate-lightbox-in"
+              priority
+            />
+          </div>
 
           <div className="mt-8 flex items-center gap-6">
             <span className="font-body text-[0.7rem] tracking-[0.3em] text-ink/50">
