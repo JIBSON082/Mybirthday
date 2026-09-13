@@ -44,6 +44,8 @@ export default function Gallery() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [paused, setPaused] = useState(false);
   const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
+  const [inView, setInView] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
   const touchStartX = useRef<number | null>(null);
   const autoplayRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // Cache blobs we've already fetched so downloads are instant on repeat clicks.
@@ -55,16 +57,30 @@ export default function Gallery() {
   const next = useCallback(() => goTo(active + 1), [active, goTo]);
   const prev = useCallback(() => goTo(active - 1), [active, goTo]);
 
-  // autoplay — pauses on hover/touch/lightbox, resumes after
+  // Only start the carousel once the section is actually on screen — before
+  // that it just sits on the first image, so scrolling down always lands on
+  // image 1 instead of whatever it drifted to while off-screen.
   useEffect(() => {
-    if (paused || lightboxIndex !== null) return;
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      { threshold: 0.35 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // autoplay — only while in view, pauses on hover/touch/lightbox, resumes after
+  useEffect(() => {
+    if (!inView || paused || lightboxIndex !== null) return;
     autoplayRef.current = setInterval(() => {
       setActive((a) => (a + 1) % IMAGES.length);
     }, AUTOPLAY_MS);
     return () => {
       if (autoplayRef.current) clearInterval(autoplayRef.current);
     };
-  }, [paused, lightboxIndex]);
+  }, [inView, paused, lightboxIndex]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -128,7 +144,7 @@ export default function Gallery() {
   }
 
   return (
-    <section id="gallery" className="relative z-[2] bg-bg px-[5vw] pt-36 pb-32 sm:pt-40">
+    <section id="gallery" ref={sectionRef} className="relative z-[2] bg-bg px-[5vw] pt-36 pb-32 sm:pt-40">
       <div className="mb-12 flex items-baseline justify-between flex-wrap gap-6">
         <h2 className="font-display text-[clamp(2.2rem,5.5vw,3.6rem)] tracking-wide text-ink">
           Frozen In Frame
