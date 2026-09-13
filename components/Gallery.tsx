@@ -84,11 +84,20 @@ export default function Gallery() {
     setTimeout(() => setPaused(false), 1200);
   }
 
-  async function downloadImage(src: string, filename: string) {
-    const res = await fetch(src);
-    const blob = await res.blob();
-    const { saveAs } = await import("file-saver");
-    saveAs(blob, filename);
+  function downloadImage(src: string, filename: string) {
+    // Use Cloudinary's fl_attachment transform so the browser downloads the
+    // file directly via a normal navigation — this avoids fetch()+blob(),
+    // which silently fails when Cloudinary doesn't send CORS headers back.
+    const attachmentUrl = src.includes("/upload/")
+      ? src.replace("/upload/", `/upload/fl_attachment:${filename.replace(/\.[^.]+$/, "")}/`)
+      : src;
+    const link = document.createElement("a");
+    link.href = attachmentUrl;
+    link.download = filename;
+    link.rel = "noopener";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   async function handleDownloadAll() {
@@ -101,7 +110,11 @@ export default function Gallery() {
       const folder = zip.folder("DAVE_gallery")!;
       await Promise.all(
         IMAGES.map(async (src, i) => {
-          const res = await fetch(src);
+          // fetch() needs Cloudinary to return CORS headers to read bytes for
+          // zipping — if your Cloudinary account/plan doesn't allow that,
+          // this will throw and the catch block below reports "Failed — retry".
+          const res = await fetch(src, { mode: "cors" });
+          if (!res.ok) throw new Error(`Failed to fetch image ${i + 1}: ${res.status}`);
           const blob = await res.blob();
           folder.file(`DAVE_${i + 1}.jpg`, blob);
         })
@@ -261,26 +274,6 @@ export default function Gallery() {
           <span className="mx-1 text-gold">/</span>
           {pad(IMAGES.length - 1)}
         </div>
-      </div>
-
-      {/* dot indicators */}
-      <div className="mt-6 flex justify-center gap-2">
-        {IMAGES.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => {
-              goTo(i);
-              setPaused(true);
-              setTimeout(() => setPaused(false), 1200);
-            }}
-            aria-label={`Go to photo ${i + 1}`}
-            className="h-1.5 rounded-full transition-all duration-300"
-            style={{
-              width: i === active ? "22px" : "6px",
-              backgroundColor: i === active ? "#d4af37" : "rgba(244,241,234,0.25)",
-            }}
-          />
-        ))}
       </div>
 
       {lightboxIndex !== null && (
