@@ -79,8 +79,8 @@ function Footer() {
   return (
     <div className="mt-16 w-full max-w-xl">
       <div className="border-t border-ink/10 pt-6">
-        <span className="font-body text-[0.62rem] uppercase tracking-[0.3em] text-gold/70">
-          Get in touch
+        <span className="font-display text-[0.75rem] uppercase tracking-[0.08em] text-gold/80">
+          Socials
         </span>
         <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
           <a
@@ -265,11 +265,12 @@ export default function Contact() {
         <div className="mt-10 flex w-full max-w-xl flex-col gap-4">
           <a
             href={`mailto:${EMAIL}`}
-            className="rounded-full border border-ink/15 px-6 py-4 text-center font-body text-[0.9rem] text-ink/80 transition-all duration-700 ease-out hover:border-gold hover:text-gold"
+            className="pill-float rounded-full border border-ink/15 px-6 py-4 text-center font-body text-[0.9rem] text-ink/80 transition-all duration-700 ease-out hover:border-gold hover:text-gold"
             style={{
               opacity: visible ? 1 : 0,
               transform: visible ? "translateX(0)" : "translateX(-30px)",
               transitionDelay: "0.75s",
+              animationDelay: "0.2s",
             }}
           >
             {EMAIL}
@@ -278,11 +279,12 @@ export default function Contact() {
             href={`https://wa.me/${WHATSAPP_NUMBER}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-full border border-ink/15 px-6 py-4 text-center font-body text-[0.9rem] text-ink/80 transition-all duration-700 ease-out hover:border-gold hover:text-gold"
+            className="pill-float rounded-full border border-ink/15 px-6 py-4 text-center font-body text-[0.9rem] text-ink/80 transition-all duration-700 ease-out hover:border-gold hover:text-gold"
             style={{
               opacity: visible ? 1 : 0,
               transform: visible ? "translateX(0)" : "translateX(30px)",
               transitionDelay: "0.9s",
+              animationDelay: "1s",
             }}
           >
             {PHONE_DISPLAY}
@@ -463,6 +465,19 @@ export default function Contact() {
           100% {
             transform: scale(1.4);
             opacity: 0;
+          }
+        }
+
+        .pill-float {
+          animation: pillFloat 4.5s ease-in-out infinite;
+        }
+        @keyframes pillFloat {
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-4px);
           }
         }
       `}</style>
