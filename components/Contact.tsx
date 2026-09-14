@@ -8,7 +8,7 @@ const PHONE_DISPLAY = "0706 863 4125";
 const INSTAGRAM_URL =
   "https://www.instagram.com/daveajibua?stkn=YW5jYm1nMmd1bmY0";
 
-// Formspree endpoint — submissions land in davidajibua78@gmail.com's inbox.
+// Formspree endpoint: submissions land in davidajibua78@gmail.com's inbox.
 const FORMSPREE_ENDPOINT = "https://formspree.io/f/xkoqnzqn";
 
 type Step = "intro" | "form";
@@ -220,8 +220,8 @@ export default function Contact() {
               transitionDelay: "0.1s",
             }}
           >
-            Let&apos;s work{" "}
-          </span>
+            Let&apos;s work
+          </span>{" "}
           <span
             className="inline-block text-gold transition-all duration-700 ease-out"
             style={{
@@ -294,7 +294,7 @@ export default function Contact() {
         </div>
 
         <div
-          className="transition-all duration-700 ease-out"
+          className="w-full transition-all duration-700 ease-out"
           style={{
             opacity: visible ? 1 : 0,
             transform: visible ? "translateY(0)" : "translateY(20px)",
@@ -336,11 +336,10 @@ export default function Contact() {
           {status === "sent" ? (
             <div className="mt-14 border-t border-ink/10 pt-10 text-center">
               <p className="font-display text-2xl text-gold sm:text-3xl">
-                Message sent successfully!
+                Message sent.
               </p>
               <p className="mx-auto mt-4 max-w-sm font-body text-[0.95rem] leading-relaxed text-ink/70">
-                Thank you, {form.name.split(" ")[0] || "friend"}. I&apos;ll
-                reach out to the details you provided as soon as I can.
+                I&apos;ll get back to you shortly.
               </p>
               <button
                 onClick={() => {
@@ -409,10 +408,10 @@ export default function Contact() {
           )}
         </div>
 
-        <Footer />
+        <div className="w-full">
+          <Footer />
+        </div>
       </div>
-
-      <style jsx>{`
         .particle {
           animation-name: floatUp;
           animation-timing-function: linear;
