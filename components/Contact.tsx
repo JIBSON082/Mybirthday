@@ -8,6 +8,9 @@ const PHONE_DISPLAY = "0706 863 4125";
 const INSTAGRAM_URL =
   "https://www.instagram.com/daveajibua?stkn=YW5jYm1nMmd1bmY0";
 
+// Formspree endpoint — submissions land in davidajibua78@gmail.com's inbox.
+const FORMSPREE_ENDPOINT = "https://formspree.io/f/xkoqnzqn";
+
 type Step = "intro" | "form";
 
 interface FormState {
@@ -97,26 +100,37 @@ function Footer() {
 export default function Contact() {
   const [step, setStep] = useState<Step>("intro");
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
+    "idle"
+  );
 
-  const canSend = form.name.trim() !== "" && form.message.trim() !== "";
+  const canSend =
+    form.name.trim() !== "" && form.message.trim() !== "" && status !== "sending";
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  function handleSend() {
+  async function handleSend() {
     if (!canSend) return;
-    const lines = [
-      `Hello David! I'd like to talk about a project.`,
-      ``,
-      `Name: ${form.name}`,
-      form.email ? `Email: ${form.email}` : null,
-      form.looking ? `Looking for: ${form.looking}` : null,
-      ``,
-      `Message: ${form.message}`,
-    ].filter(Boolean);
-    const text = encodeURIComponent(lines.join("\n"));
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${text}`, "_blank", "noopener");
+    setStatus("sending");
+    try {
+      const res = await fetch(FORMSPREE_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          lookingFor: form.looking,
+          message: form.message,
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setStatus("sent");
+    } catch (err) {
+      console.error("Contact form submission failed:", err);
+      setStatus("error");
+    }
   }
 
   return (
@@ -205,53 +219,80 @@ export default function Contact() {
             <span className="text-gold">project together</span>
           </h2>
 
-          <div className="mt-10 space-y-8 border-t border-ink/10 pt-8">
-            <Field
-              num="01"
-              label="What's your name?"
-              placeholder="Your full name"
-              required
-              value={form.name}
-              onChange={(v) => update("name", v)}
-            />
-            <Field
-              num="02"
-              label="What's your email?"
-              placeholder="you@example.com"
-              type="email"
-              value={form.email}
-              onChange={(v) => update("email", v)}
-            />
-            <Field
-              num="03"
-              label="What are you looking for?"
-              placeholder="Website, portfolio, something custom..."
-              value={form.looking}
-              onChange={(v) => update("looking", v)}
-            />
-            <Field
-              num="04"
-              label="Your message"
-              placeholder="Hello David, can you help me with..."
-              required
-              multiline
-              value={form.message}
-              onChange={(v) => update("message", v)}
-            />
-          </div>
+          {status === "sent" ? (
+            <div className="mt-14 border-t border-ink/10 pt-10 text-center">
+              <p className="font-display text-2xl text-gold sm:text-3xl">
+                Message sent successfully!
+              </p>
+              <p className="mx-auto mt-4 max-w-sm font-body text-[0.95rem] leading-relaxed text-ink/70">
+                Thank you, {form.name.split(" ")[0] || "friend"}. I&apos;ll
+                reach out to the details you provided as soon as I can.
+              </p>
+              <button
+                onClick={() => {
+                  setForm(EMPTY_FORM);
+                  setStatus("idle");
+                  setStep("intro");
+                }}
+                className="mt-8 font-body text-[0.75rem] uppercase tracking-[0.2em] text-ink/50 transition-colors hover:text-gold"
+              >
+                &larr; Back to start
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="mt-10 space-y-8 border-t border-ink/10 pt-8">
+                <Field
+                  num="01"
+                  label="What's your name?"
+                  placeholder="Your full name"
+                  required
+                  value={form.name}
+                  onChange={(v) => update("name", v)}
+                />
+                <Field
+                  num="02"
+                  label="What's your email?"
+                  placeholder="you@example.com"
+                  type="email"
+                  value={form.email}
+                  onChange={(v) => update("email", v)}
+                />
+                <Field
+                  num="03"
+                  label="What are you looking for?"
+                  placeholder="Website, portfolio, something custom..."
+                  value={form.looking}
+                  onChange={(v) => update("looking", v)}
+                />
+                <Field
+                  num="04"
+                  label="Your message"
+                  placeholder="Hello David, can you help me with..."
+                  required
+                  multiline
+                  value={form.message}
+                  onChange={(v) => update("message", v)}
+                />
+              </div>
 
-          <div className="mt-14 flex items-center justify-between border-t border-ink/10 pt-8">
-            <span className="font-body text-[0.85rem] text-ink/50">
-              Opens WhatsApp with this filled in
-            </span>
-            <button
-              onClick={handleSend}
-              disabled={!canSend}
-              className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full border border-gold text-center font-body text-[0.75rem] uppercase tracking-[0.15em] text-gold transition-colors duration-300 hover:bg-gold hover:text-bg disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gold sm:h-32 sm:w-32"
-            >
-              Send it!
-            </button>
-          </div>
+              {status === "error" && (
+                <p className="mt-6 font-body text-[0.85rem] text-red-400">
+                  Something went wrong sending that. Please try again in a moment.
+                </p>
+              )}
+
+              <div className="mt-14 flex items-center justify-end border-t border-ink/10 pt-8">
+                <button
+                  onClick={handleSend}
+                  disabled={!canSend}
+                  className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full bg-gold text-center font-body text-[0.75rem] uppercase tracking-[0.15em] text-bg transition-transform duration-300 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:scale-100 sm:h-32 sm:w-32"
+                >
+                  {status === "sending" ? "Sending…" : "Send it!"}
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
         <Footer />
