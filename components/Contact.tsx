@@ -96,7 +96,7 @@ export default function Contact() {
       <Particles />
 
       <div className="relative z-10 mx-auto max-w-2xl text-center">
-        <h2 className="font-display text-[clamp(2.2rem,6.5vw,3.6rem)] leading-[1.05] tracking-wide text-ink">
+        <h2 className="font-display text-[clamp(2rem,6vw,3rem)] leading-[0.95] tracking-wide text-ink">
           {HEADING.split("").map((char, i) => (
             <span
               key={i}
