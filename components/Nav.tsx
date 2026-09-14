@@ -11,10 +11,12 @@ const LINKS = [
 export default function Nav() {
   const [open, setOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const [pastHero, setPastHero] = useState(false);
   const lastScrollY = useRef(0);
 
   useEffect(() => {
     lastScrollY.current = window.scrollY;
+    const heroThreshold = window.innerHeight * 0.9;
 
     function onScroll() {
       const currentY = window.scrollY;
@@ -31,15 +33,24 @@ export default function Nav() {
         setHidden(false);
       }
 
+      // the DAVE wordmark only belongs to the hero moment; once you've
+      // scrolled past it, it disappears entirely rather than following you
+      // down the page.
+      setPastHero(currentY > heroThreshold);
+
       lastScrollY.current = currentY;
     }
 
     window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   // never hide the bar while the mobile menu itself is open
   const isHidden = hidden && !open;
+  // wordmark shows in the hero, or while the menu is open (so it still
+  // reads as the site identity inside the overlay), but nowhere else
+  const showWordmark = !pastHero || open;
 
   return (
     <>
@@ -52,13 +63,16 @@ export default function Nav() {
         }}
       >
         <div
-          className="font-display text-[2.4rem] leading-none tracking-wide transition-colors duration-300"
+          className="font-display text-[2.4rem] leading-none tracking-wide transition-all duration-400 ease-out"
           style={{
             color: open ? "#f4f1ea" : "#000000",
             WebkitTextStroke: open ? "1.5px #f4f1ea" : "1.5px black",
             textShadow: open
               ? "none"
               : "1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000",
+            opacity: showWordmark ? 1 : 0,
+            transform: showWordmark ? "translateY(0)" : "translateY(-12px)",
+            pointerEvents: showWordmark ? "auto" : "none",
           }}
         >
           DAVE
@@ -143,7 +157,7 @@ export default function Nav() {
         </ul>
 
         <div className="absolute bottom-10 left-0 right-0 text-center text-[0.62rem] tracking-[0.3em] uppercase text-ink/40">
-          DAVE &mdash; The Gallery
+          DAVE: The Gallery
         </div>
       </div>
     </>
