@@ -147,7 +147,7 @@ export default function Gallery() {
     <section id="gallery" ref={sectionRef} className="relative z-[2] bg-bg px-[5vw] pt-36 pb-32 sm:pt-40">
       <div className="mb-12 flex items-baseline justify-between flex-wrap gap-6">
         <h2 className="font-display text-[clamp(2.2rem,5.5vw,3.6rem)] tracking-wide text-ink">
-          Frozen In Frame
+          Explore Gallery
         </h2>
       </div>
 
