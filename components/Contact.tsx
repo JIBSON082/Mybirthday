@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const WHATSAPP_NUMBER = "2347068634125";
 const EMAIL = "davidajibua78@gmail.com";
@@ -42,13 +42,45 @@ function useLagosTime() {
   return time;
 }
 
+function Particles() {
+  const particles = useMemo(
+    () =>
+      Array.from({ length: 20 }, (_, i) => ({
+        left: (i * 47.3) % 100,
+        delay: (i * 0.5) % 7,
+        duration: 7 + ((i * 3) % 9),
+        size: 2 + (i % 3),
+      })),
+    []
+  );
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      {particles.map((p, i) => (
+        <span
+          key={i}
+          className="particle absolute rounded-full bg-gold"
+          style={{
+            left: `${p.left}%`,
+            width: p.size,
+            height: p.size,
+            bottom: "-5%",
+            opacity: 0,
+            animationDelay: `${p.delay}s`,
+            animationDuration: `${p.duration}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 function Footer() {
   const time = useLagosTime();
   return (
     <div className="mt-16 w-full max-w-xl">
       <div className="border-t border-ink/10 pt-6">
         <span className="font-body text-[0.62rem] uppercase tracking-[0.3em] text-gold/70">
-          Socials
+          Get in touch
         </span>
         <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
           <a
@@ -103,6 +135,24 @@ export default function Contact() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
     "idle"
   );
+  const [visible, setVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const canSend =
     form.name.trim() !== "" && form.message.trim() !== "" && status !== "sending";
@@ -136,39 +186,76 @@ export default function Contact() {
   return (
     <section
       id="contact"
+      ref={sectionRef}
       className="relative z-[2] min-h-screen overflow-hidden bg-bg px-[6vw] py-28"
     >
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(circle at 50% 15%, rgba(212,175,55,0.08), transparent 60%)",
-        }}
-      />
+      <div className="glow-breathe pointer-events-none absolute inset-0" />
+      <Particles />
 
       {/* ---------------- INTRO VIEW ---------------- */}
       <div
-        className="relative z-10 flex flex-col items-center transition-all duration-500 ease-out"
+        className="relative z-10 flex flex-col items-center transition-all duration-700 ease-out"
         style={{
+          perspective: "1400px",
           opacity: step === "intro" ? 1 : 0,
-          transform: step === "intro" ? "translateX(0)" : "translateX(-24px)",
+          transform:
+            step === "intro"
+              ? "translateX(0) rotateY(0deg)"
+              : "translateX(-60px) rotateY(35deg)",
           position: step === "intro" ? "relative" : "absolute",
           pointerEvents: step === "intro" ? "auto" : "none",
           inset: step === "intro" ? undefined : 0,
         }}
       >
         <h2 className="w-full max-w-xl font-display text-[clamp(2.3rem,7vw,3.6rem)] leading-[1.05] tracking-wide text-ink">
-          Let&apos;s work <span className="text-gold">together</span>
+          <span
+            className="inline-block transition-all duration-700 ease-out"
+            style={{
+              opacity: visible ? 1 : 0,
+              transform: visible
+                ? "translateY(0) rotate(0deg)"
+                : "translateY(30px) rotate(-8deg)",
+              transitionDelay: "0.1s",
+            }}
+          >
+            Let&apos;s work{" "}
+          </span>
+          <span
+            className="inline-block text-gold transition-all duration-700 ease-out"
+            style={{
+              opacity: visible ? 1 : 0,
+              transform: visible
+                ? "translateY(0) rotate(0deg)"
+                : "translateY(30px) rotate(8deg)",
+              transitionDelay: "0.3s",
+            }}
+          >
+            together
+          </span>
         </h2>
 
-        <div className="mt-12 flex w-full max-w-xl items-center justify-between border-t border-ink/10 pt-8">
+        <div
+          className="mt-12 flex w-full max-w-xl items-center justify-between border-t border-ink/10 pt-8 transition-all duration-700 ease-out"
+          style={{
+            opacity: visible ? 1 : 0,
+            transform: visible ? "translateY(0)" : "translateY(20px)",
+            transitionDelay: "0.5s",
+          }}
+        >
           <span className="font-body text-[0.85rem] text-ink/50">
             Have something in mind?
           </span>
           <button
             onClick={() => setStep("form")}
-            className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full border border-gold text-center font-body text-[0.75rem] uppercase tracking-[0.15em] text-gold transition-colors duration-300 hover:bg-gold hover:text-bg sm:h-32 sm:w-32"
+            className="cta-ring relative flex h-28 w-28 shrink-0 items-center justify-center rounded-full border border-gold text-center font-body text-[0.75rem] uppercase tracking-[0.15em] text-gold transition-transform duration-300 hover:scale-105 hover:bg-gold hover:text-bg sm:h-32 sm:w-32"
+            style={{
+              transform: visible ? "scale(1)" : "scale(0)",
+              transitionDelay: "0.6s",
+              transitionDuration: "600ms",
+              transitionTimingFunction: "cubic-bezier(0.34,1.56,0.64,1)",
+            }}
           >
+            <span className="cta-ping absolute inset-0 rounded-full border border-gold" />
             Get in
             <br />
             touch
@@ -178,7 +265,12 @@ export default function Contact() {
         <div className="mt-10 flex w-full max-w-xl flex-col gap-4">
           <a
             href={`mailto:${EMAIL}`}
-            className="rounded-full border border-ink/15 px-6 py-4 text-center font-body text-[0.9rem] text-ink/80 transition-colors hover:border-gold hover:text-gold"
+            className="rounded-full border border-ink/15 px-6 py-4 text-center font-body text-[0.9rem] text-ink/80 transition-all duration-700 ease-out hover:border-gold hover:text-gold"
+            style={{
+              opacity: visible ? 1 : 0,
+              transform: visible ? "translateX(0)" : "translateX(-30px)",
+              transitionDelay: "0.75s",
+            }}
           >
             {EMAIL}
           </a>
@@ -186,21 +278,39 @@ export default function Contact() {
             href={`https://wa.me/${WHATSAPP_NUMBER}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-full border border-ink/15 px-6 py-4 text-center font-body text-[0.9rem] text-ink/80 transition-colors hover:border-gold hover:text-gold"
+            className="rounded-full border border-ink/15 px-6 py-4 text-center font-body text-[0.9rem] text-ink/80 transition-all duration-700 ease-out hover:border-gold hover:text-gold"
+            style={{
+              opacity: visible ? 1 : 0,
+              transform: visible ? "translateX(0)" : "translateX(30px)",
+              transitionDelay: "0.9s",
+            }}
           >
             {PHONE_DISPLAY}
           </a>
         </div>
 
-        <Footer />
+        <div
+          className="transition-all duration-700 ease-out"
+          style={{
+            opacity: visible ? 1 : 0,
+            transform: visible ? "translateY(0)" : "translateY(20px)",
+            transitionDelay: "1.05s",
+          }}
+        >
+          <Footer />
+        </div>
       </div>
 
       {/* ---------------- FORM VIEW ---------------- */}
       <div
-        className="relative z-10 flex flex-col items-center transition-all duration-500 ease-out"
+        className="relative z-10 flex flex-col items-center transition-all duration-700 ease-out"
         style={{
+          perspective: "1400px",
           opacity: step === "form" ? 1 : 0,
-          transform: step === "form" ? "translateX(0)" : "translateX(24px)",
+          transform:
+            step === "form"
+              ? "translateX(0) rotateY(0deg)"
+              : "translateX(60px) rotateY(-35deg)",
           position: step === "form" ? "relative" : "absolute",
           pointerEvents: step === "form" ? "auto" : "none",
           inset: step === "form" ? undefined : 0,
@@ -297,6 +407,65 @@ export default function Contact() {
 
         <Footer />
       </div>
+
+      <style jsx>{`
+        .glow-breathe {
+          background: radial-gradient(
+            circle at 50% 20%,
+            rgba(212, 175, 55, 0.1),
+            transparent 60%
+          );
+          animation: breathe 5s ease-in-out infinite;
+        }
+        @keyframes breathe {
+          0%,
+          100% {
+            opacity: 0.6;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1.15);
+          }
+        }
+
+        .particle {
+          animation-name: floatUp;
+          animation-timing-function: linear;
+          animation-iteration-count: infinite;
+        }
+        @keyframes floatUp {
+          0% {
+            transform: translateY(0) translateX(0);
+            opacity: 0;
+          }
+          10% {
+            opacity: 0.5;
+          }
+          90% {
+            opacity: 0.3;
+          }
+          100% {
+            transform: translateY(-110vh) translateX(20px);
+            opacity: 0;
+          }
+        }
+
+        .cta-ping {
+          animation: ping 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+        @keyframes ping {
+          0% {
+            transform: scale(1);
+            opacity: 0.6;
+          }
+          75%,
+          100% {
+            transform: scale(1.4);
+            opacity: 0;
+          }
+        }
+      `}</style>
     </section>
   );
 }
