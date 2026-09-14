@@ -161,7 +161,7 @@ export default function Gallery() {
             filter: hasEntered ? "blur(0px)" : "blur(14px)",
           }}
         >
-          Explore Gallery 
+          Frozen In Frame
         </h2>
       </div>
 
@@ -315,7 +315,7 @@ export default function Gallery() {
       {lightboxIndex !== null && (
         <div
           className="fixed inset-0 z-[200] flex flex-col items-center justify-center px-[5vw] py-[6vh]"
-          style={{ background: "rgba(6,6,6,0.98)" }}
+          style={{ background: "#060606" }}
           onClick={(e) => {
             if (e.target === e.currentTarget) setLightboxIndex(null);
           }}
