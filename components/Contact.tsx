@@ -323,7 +323,7 @@ export default function Contact() {
         <div className="w-full max-w-xl">
           <button
             onClick={() => setStep("intro")}
-            className="mb-6 font-body text-[0.75rem] uppercase tracking-[0.2em] text-ink/50 transition-colors hover:text-gold"
+            className="mb-6 font-body text-[0.75rem] uppercase tracking-[0.4em] text-ink/50 transition-colors hover:text-gold"
           >
             &larr; Back
           </button>
