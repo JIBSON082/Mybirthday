@@ -244,7 +244,7 @@ export default function Contact() {
             transitionDelay: "0.5s",
           }}
         >
-          <span className="font-body text-[0.85rem] text-ink/50">
+          <span className="font-body text-[0.98rem] text-ink/50">
             Have something in mind?
           </span>
           <button
