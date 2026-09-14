@@ -161,7 +161,7 @@ export default function Gallery() {
             filter: hasEntered ? "blur(0px)" : "blur(14px)",
           }}
         >
-          Frozen In Frame
+          Explore Gallery 
         </h2>
       </div>
 
