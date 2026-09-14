@@ -77,7 +77,7 @@ function Particles() {
 function Footer() {
   const time = useLagosTime();
   return (
-    <div className="mt-16 w-full max-w-xl">
+    <div className="mt-16 w-full">
       <div className="border-t border-ink/10 pt-6">
         <span className="font-display text-[0.75rem] uppercase tracking-[0.08em] text-gold/80">
           Socials
@@ -189,7 +189,9 @@ export default function Contact() {
       ref={sectionRef}
       className="relative z-[2] min-h-screen overflow-hidden bg-bg px-[6vw] py-28"
     >
-      <div className="glow-breathe pointer-events-none absolute inset-0" />
+      <div className="pointer-events-none absolute inset-0 opacity-60" style={{
+        background: "radial-gradient(circle at 50% 20%, rgba(212,175,55,0.1), transparent 60%)",
+      }} />
       <Particles />
 
       {/* ---------------- INTRO VIEW ---------------- */}
@@ -373,7 +375,7 @@ export default function Contact() {
                 <Field
                   num="03"
                   label="What are you looking for?"
-                  placeholder="Website, application, something custom..."
+                  placeholder="Website, portfolio, something custom..."
                   value={form.looking}
                   onChange={(v) => update("looking", v)}
                 />
@@ -411,26 +413,6 @@ export default function Contact() {
       </div>
 
       <style jsx>{`
-        .glow-breathe {
-          background: radial-gradient(
-            circle at 50% 20%,
-            rgba(212, 175, 55, 0.1),
-            transparent 60%
-          );
-          animation: breathe 5s ease-in-out infinite;
-        }
-        @keyframes breathe {
-          0%,
-          100% {
-            opacity: 0.6;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 1;
-            transform: scale(1.15);
-          }
-        }
-
         .particle {
           animation-name: floatUp;
           animation-timing-function: linear;
