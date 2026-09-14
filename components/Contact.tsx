@@ -373,7 +373,7 @@ export default function Contact() {
                 <Field
                   num="03"
                   label="What are you looking for?"
-                  placeholder="Website, portfolio, something custom..."
+                  placeholder="Website, application, something custom..."
                   value={form.looking}
                   onChange={(v) => update("looking", v)}
                 />
