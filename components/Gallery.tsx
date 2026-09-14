@@ -45,6 +45,7 @@ export default function Gallery() {
   const [paused, setPaused] = useState(false);
   const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
   const [inView, setInView] = useState(false);
+  const [hasEntered, setHasEntered] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
   const touchStartX = useRef<number | null>(null);
   const autoplayRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -64,7 +65,10 @@ export default function Gallery() {
     const el = sectionRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
-      ([entry]) => setInView(entry.isIntersecting),
+      ([entry]) => {
+        setInView(entry.isIntersecting);
+        if (entry.isIntersecting) setHasEntered(true);
+      },
       { threshold: 0.35 }
     );
     observer.observe(el);
@@ -146,8 +150,18 @@ export default function Gallery() {
   return (
     <section id="gallery" ref={sectionRef} className="relative z-[2] bg-bg px-[5vw] pt-36 pb-32 sm:pt-40">
       <div className="mb-12 flex items-baseline justify-between flex-wrap gap-6">
-        <h2 className="font-display text-[clamp(2.2rem,5.5vw,3.6rem)] tracking-wide text-ink">
-          Explore Gallery
+        <h2
+          className="font-display text-[clamp(2.2rem,5.5vw,3.6rem)] tracking-wide text-ink transition-all duration-[900ms] ease-out"
+          style={{
+            opacity: hasEntered ? 1 : 0,
+            transform: hasEntered
+              ? "translateY(0) rotateX(0deg)"
+              : "translateY(40px) rotateX(-50deg)",
+            transformOrigin: "center bottom",
+            filter: hasEntered ? "blur(0px)" : "blur(6px)",
+          }}
+        >
+          Frozen In Frame
         </h2>
       </div>
 
@@ -190,8 +204,15 @@ export default function Gallery() {
 
         {/* the card stack */}
         <div
-          className="relative flex h-full items-center justify-center"
-          style={{ perspective: "1600px" }}
+          className="relative flex h-full items-center justify-center transition-all duration-[1100ms] ease-out"
+          style={{
+            perspective: "1600px",
+            opacity: hasEntered ? 1 : 0,
+            transform: hasEntered
+              ? "scale(1) rotateX(0deg) translateZ(0px)"
+              : "scale(0.6) rotateX(55deg) translateZ(-400px)",
+            transformOrigin: "center 60%",
+          }}
         >
           {IMAGES.map((src, i) => {
             const offset = wrappedOffset(i, active, IMAGES.length);
@@ -213,8 +234,9 @@ export default function Gallery() {
                   pointerEvents: isDeep ? "none" : "auto",
                   transformStyle: "preserve-3d",
                   backfaceVisibility: "hidden",
-                  transition:
-                    "transform 900ms cubic-bezier(0.22,1,0.36,1), opacity 900ms ease",
+                  transition: hasEntered
+                    ? `transform 900ms cubic-bezier(0.22,1,0.36,1) ${abs * 0.06}s, opacity 900ms ease ${abs * 0.06}s`
+                    : "none",
                 }}
               >
                 {/* image itself has no hard rectangle edge — mask fades it into
