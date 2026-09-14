@@ -151,14 +151,14 @@ export default function Gallery() {
     <section id="gallery" ref={sectionRef} className="relative z-[2] bg-bg px-[5vw] pt-36 pb-32 sm:pt-40">
       <div className="mb-12 flex items-baseline justify-between flex-wrap gap-6">
         <h2
-          className="font-display text-[clamp(2.2rem,5.5vw,3.6rem)] tracking-wide text-ink transition-all duration-[900ms] ease-out"
+          className="font-display text-[clamp(2.2rem,5.5vw,3.6rem)] tracking-wide text-ink transition-all duration-[1100ms] ease-out"
           style={{
             opacity: hasEntered ? 1 : 0,
             transform: hasEntered
-              ? "translateY(0) rotateX(0deg)"
-              : "translateY(40px) rotateX(-50deg)",
+              ? "translateY(0) translateZ(0) rotateX(0deg) scale(1)"
+              : "translateY(70px) translateZ(-200px) rotateX(-75deg) scale(0.7)",
             transformOrigin: "center bottom",
-            filter: hasEntered ? "blur(0px)" : "blur(6px)",
+            filter: hasEntered ? "blur(0px)" : "blur(14px)",
           }}
         >
           Frozen In Frame
@@ -204,15 +204,8 @@ export default function Gallery() {
 
         {/* the card stack */}
         <div
-          className="relative flex h-full items-center justify-center transition-all duration-[1100ms] ease-out"
-          style={{
-            perspective: "1600px",
-            opacity: hasEntered ? 1 : 0,
-            transform: hasEntered
-              ? "scale(1) rotateX(0deg) translateZ(0px)"
-              : "scale(0.6) rotateX(55deg) translateZ(-400px)",
-            transformOrigin: "center 60%",
-          }}
+          className="relative flex h-full items-center justify-center"
+          style={{ perspective: "1800px" }}
         >
           {IMAGES.map((src, i) => {
             const offset = wrappedOffset(i, active, IMAGES.length);
@@ -228,14 +221,17 @@ export default function Gallery() {
                 onClick={() => (isActive ? setLightboxIndex(i) : goTo(i))}
                 className="absolute h-[85%] w-[56%] max-w-[340px] cursor-pointer sm:w-[38%]"
                 style={{
-                  transform: `translateX(${offset * 52}%) translateZ(${isActive ? 0 : -abs * 80}px) scale(${1 - abs * 0.16}) rotateY(${offset * -32}deg)`,
-                  opacity: isActive ? 1 : abs === 1 ? 0.5 : 0.15,
+                  transform: hasEntered
+                    ? `translateX(${offset * 52}%) translateZ(${isActive ? 0 : -abs * 80}px) scale(${1 - abs * 0.16}) rotateY(${offset * -32}deg) rotateZ(0deg)`
+                    : `translateX(${offset * 52 + (offset === 0 ? 0 : offset < 0 ? -140 : 140)}%) translateY(${abs * 60}px) translateZ(${-900 - abs * 250}px) scale(0.25) rotateY(${offset * -160}deg) rotateZ(${offset * 22}deg)`,
+                  opacity: hasEntered ? (isActive ? 1 : abs === 1 ? 0.5 : 0.15) : 0,
+                  filter: hasEntered ? "blur(0px)" : "blur(10px)",
                   zIndex: 10 - abs,
                   pointerEvents: isDeep ? "none" : "auto",
                   transformStyle: "preserve-3d",
                   backfaceVisibility: "hidden",
                   transition: hasEntered
-                    ? `transform 900ms cubic-bezier(0.22,1,0.36,1) ${abs * 0.06}s, opacity 900ms ease ${abs * 0.06}s`
+                    ? `transform 1200ms cubic-bezier(0.34,1.56,0.64,1) ${abs * 0.1}s, opacity 700ms ease ${abs * 0.1}s, filter 700ms ease ${abs * 0.1}s`
                     : "none",
                 }}
               >
