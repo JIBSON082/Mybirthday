@@ -412,6 +412,8 @@ export default function Contact() {
           <Footer />
         </div>
       </div>
+
+      <style jsx>{`
         .particle {
           animation-name: floatUp;
           animation-timing-function: linear;
